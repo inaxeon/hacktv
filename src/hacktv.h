@@ -86,13 +86,14 @@ typedef struct {
 	char *raw_bb_file;
 	int16_t raw_bb_blanking_level;
 	int16_t raw_bb_white_level;
+	testcard_type_t testcard_philips_type;
 	int secam_field_id;
 	int secam_field_id_lines;
 	int list_modes;
 	int json;
 	char *ffmt;
 	char *fopts;
-	
+
 	/* Video encoder state */
 	vid_t vid;
 	

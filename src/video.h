@@ -39,6 +39,7 @@ typedef struct vid_t vid_t;
 #include "vitc.h"
 #include "vbidata.h"
 #include "sis.h"
+#include "test_philips.h"
 
 /* Return codes */
 #define VID_OK             0
@@ -151,6 +152,9 @@ typedef struct {
 	char *raw_bb_file;
 	int16_t raw_bb_blanking_level;
 	int16_t raw_bb_white_level;
+
+	/* Philips testcards */
+	testcard_type_t testcard_philips_type;
 	
 	/* Signal offset and passthru */
 	int64_t offset;
@@ -404,6 +408,9 @@ struct vid_t {
 	
 	/* Raw baseband video file */
 	FILE *raw_bb_file;
+
+	/* Test card */
+	testcard_t* testcard_philips;
 	
 	/* Teletext state */
 	tt_t tt;

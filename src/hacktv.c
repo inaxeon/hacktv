@@ -23,6 +23,7 @@
 #include "hacktv.h"
 #include "av.h"
 #include "rf.h"
+#include "test_philips.h"
 
 static volatile sig_atomic_t _abort = 0;
 static volatile sig_atomic_t _signal = 0;
@@ -376,6 +377,7 @@ enum {
 	_OPT_PASSTHRU,
 	_OPT_INVERT_VIDEO,
 	_OPT_RAW_BB_FILE,
+	_OPT_TESTCARD,
 	_OPT_RAW_BB_BLANKING,
 	_OPT_RAW_BB_WHITE,
 	_OPT_SECAM_FIELD_ID,
@@ -452,6 +454,7 @@ int main(int argc, char *argv[])
 		{ "passthru",       required_argument, 0, _OPT_PASSTHRU },
 		{ "invert-video",   no_argument,       0, _OPT_INVERT_VIDEO },
 		{ "raw-bb-file",    required_argument, 0, _OPT_RAW_BB_FILE },
+		{ "testcard",       required_argument, 0, _OPT_TESTCARD },
 		{ "raw-bb-blanking", required_argument, 0, _OPT_RAW_BB_BLANKING },
 		{ "raw-bb-white",   required_argument, 0, _OPT_RAW_BB_WHITE },
 		{ "secam-field-id", no_argument,       0, _OPT_SECAM_FIELD_ID },
@@ -816,7 +819,20 @@ int main(int argc, char *argv[])
 		case _OPT_RAW_BB_FILE: /* --raw-bb-file <file> */
 			s.raw_bb_file = optarg;
 			break;
-		
+
+		case _OPT_TESTCARD: /* --testcard <name> */
+			{
+				testcard_type_t type = testcard_type(optarg);
+				if (type < 0)
+				{
+					fprintf(stderr, "Unknown test card type.\n");
+					return(-1);
+				}
+
+				s.testcard_philips_type = type;
+				break;
+			}
+
 		case _OPT_RAW_BB_BLANKING: /* --raw-bb-blanking <value> */
 			s.raw_bb_blanking_level = strtol(optarg, NULL, 0);
 			break;
@@ -1191,6 +1207,7 @@ int main(int argc, char *argv[])
 	vid_conf.raw_bb_file = s.raw_bb_file;
 	vid_conf.raw_bb_blanking_level = s.raw_bb_blanking_level;
 	vid_conf.raw_bb_white_level = s.raw_bb_white_level;
+	vid_conf.testcard_philips_type = s.testcard_philips_type;
 	vid_conf.secam_field_id = s.secam_field_id;
 	vid_conf.secam_field_id_lines = s.secam_field_id_lines;
 	
