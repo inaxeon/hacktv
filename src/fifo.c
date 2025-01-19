@@ -72,10 +72,10 @@ void fifo_reader_init(fifo_reader_t *reader, fifo_t *fifo, int prefill)
 	reader->eof = 0;
 	reader->prefill = NULL;
 	
-	if(prefill > 0)
+	if(prefill != 0)
 	{
-		/* Prefill can use any block up to but not including -1 */
-		if(prefill > fifo->count) prefill = fifo->count - 1;
+		/* The prefill block cannot be either of the last two blocks */
+		if(prefill < 0 || prefill > fifo->count - 2) prefill = fifo->count - 2;
 		
 		reader->prefill = &fifo->blocks[prefill - 1];
 	}
@@ -85,13 +85,14 @@ void fifo_reader_close(fifo_reader_t *reader)
 {
 	fifo_block_t *block = reader->block;
 	
-	if(reader->eof == 0)
+	if(reader->block != NULL && reader->eof == 0)
 	{
 		pthread_mutex_lock(&block->mutex);
 		block->readers--;
 		pthread_cond_signal(&block->cond);
 		pthread_mutex_unlock(&block->mutex);
 		
+		reader->block = NULL;
 		reader->eof = 1;
 	}
 }
@@ -99,6 +100,8 @@ void fifo_reader_close(fifo_reader_t *reader)
 void fifo_close(fifo_t *fifo)
 {
 	fifo_block_t *block = fifo->block;
+	
+	if(block == NULL) return;
 	
 	block->length = fifo->offset;
 	
@@ -134,6 +137,8 @@ void fifo_free(fifo_t *fifo)
 {
 	fifo_block_t *block;
 	
+	if(fifo->block == NULL) return;
+	
 	/* Send out EOF signal */
 	fifo_close(fifo);
 	
@@ -166,13 +171,15 @@ void fifo_free(fifo_t *fifo)
 	
 	free(fifo->blocks->data);
 	free(fifo->blocks);
+	
+	fifo->block = NULL;
 }
 
 size_t fifo_read(fifo_reader_t *reader, void **ptr, size_t length, int wait)
 {
 	fifo_block_t *block = reader->block;
 	
-	if(reader->eof)
+	if(block == NULL || reader->eof)
 	{
 		/* End of line */
 		return(-1);
@@ -266,7 +273,7 @@ size_t fifo_write_ptr(fifo_t *fifo, void **ptr, int wait)
 {
 	fifo_block_t *block = fifo->block;
 	
-	if(block->length == 0) return(-1);
+	if(block == NULL || block->length == 0) return(-1);
 	
 	if(fifo->offset == block->length)
 	{
