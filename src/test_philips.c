@@ -35,25 +35,25 @@ typedef struct
 } pm8546_promblock_t;
 
 typedef struct {
-	double* taps;
+    double* taps;
     double* scale;
     int ntaps;
 } pm8546_skey_filter_t;
 
 const testcard_params_t philips4x3_pal = {
-	.file_name = "philips_4x3_pal.bin",
-	.black_level = 0xc00,
-	.white_level = 0x340,
-	.is_16x9 = 0,
-	.sample_rate = 13500000
+    .file_name = "philips_4x3_pal.bin",
+    .black_level = 0xc00,
+    .white_level = 0x340,
+    .is_16x9 = 0,
+    .sample_rate = 13500000
 };
 
 const testcard_params_t philips4x3_ntsc = {
-	.file_name = "philips_4x3_ntsc.bin",
-	.black_level = 0xc00,
-	.white_level = 0x313,
-	.is_16x9 = 0,
-	.sample_rate = 13500000
+    .file_name = "philips_4x3_ntsc.bin",
+    .black_level = 0xc00,
+    .white_level = 0x313,
+    .is_16x9 = 0,
+    .sample_rate = 13500000
 };
 
 pm8546_promblock_t _char_blocks[] = {
@@ -152,92 +152,92 @@ pm8546_promblock_t _char_blocks[] = {
 
 testcard_type_t testcard_type(const char *s)
 {
-	if (!strcmp(s, "philips4x3"))
-	{
-		return TESTCARD_PHILIPS_4X3;
-	}
-	if (!strcmp(s, "philips16x9"))
-	{
-		return TESTCARD_PHILIPS_16X9;
-	}
+    if (!strcmp(s, "philips4x3"))
+    {
+        return TESTCARD_PHILIPS_4X3;
+    }
+    if (!strcmp(s, "philips16x9"))
+    {
+        return TESTCARD_PHILIPS_16X9;
+    }
 
-	return -1;
+    return -1;
 }
 
 static int _testcard_configure(testcard_t* state, testcard_type_t type, int colour_mode)
 {
-	const testcard_params_t *params = NULL;
+    const testcard_params_t *params = NULL;
 
-	switch (type)
-	{
-		case TESTCARD_PHILIPS_4X3:
-			if (colour_mode == VID_PAL)
-				params = &philips4x3_pal;
-			if (colour_mode == VID_NTSC)
-				params = &philips4x3_ntsc;
-			break;
-		default:
-			break;
-	}
+    switch (type)
+    {
+        case TESTCARD_PHILIPS_4X3:
+            if (colour_mode == VID_PAL)
+                params = &philips4x3_pal;
+            if (colour_mode == VID_NTSC)
+                params = &philips4x3_ntsc;
+            break;
+        default:
+            break;
+    }
 
-	if (!params)
-	{
-		fprintf(stderr, "testcard: No testcard for this mode\n");
-		return(VID_ERROR);
-	}
+    if (!params)
+    {
+        fprintf(stderr, "testcard: No testcard for this mode\n");
+        return(VID_ERROR);
+    }
 
-	state->params = params;
-	
-	return VID_OK;
+    state->params = params;
+    
+    return VID_OK;
 }
 
 static int _testcard_load(testcard_t* tc, int blanking_level, int white_level)
 {
-	int16_t* buf;
-	int file_len;
+    int16_t* buf;
+    int file_len;
 
-	FILE *f = fopen(tc->params->file_name, "rb");
+    FILE *f = fopen(tc->params->file_name, "rb");
 
-	if (!f)
-	{
-		perror("fopen");
-		return(VID_ERROR);
-	}
+    if (!f)
+    {
+        perror("fopen");
+        return(VID_ERROR);
+    }
 
-	fseek(f, 0, SEEK_END);
-	file_len = ftell(f);
-	fseek(f, 0, SEEK_SET);
+    fseek(f, 0, SEEK_END);
+    file_len = ftell(f);
+    fseek(f, 0, SEEK_SET);
 
-	buf = malloc(file_len);
+    buf = malloc(file_len);
 
-	if (!buf)
-	{
-		perror("malloc");
-		return(VID_OUT_OF_MEMORY);
-	}
+    if (!buf)
+    {
+        perror("malloc");
+        return(VID_OUT_OF_MEMORY);
+    }
 
-	if (fread(buf, 1, file_len, f) != file_len)
-	{
-		fclose(f);
-		free(buf);
-		return(VID_ERROR);
-	}
+    if (fread(buf, 1, file_len, f) != file_len)
+    {
+        fclose(f);
+        free(buf);
+        return(VID_ERROR);
+    }
 
-	fclose(f);
+    fclose(f);
 
-	tc->nsamples = file_len / sizeof(*buf);
-	tc->samples = malloc(tc->nsamples * sizeof(*buf));
-	tc->pos = 0;
+    tc->nsamples = file_len / sizeof(*buf);
+    tc->samples = malloc(tc->nsamples * sizeof(*buf));
+    tc->pos = 0;
 
-	/* Scale from Philips to hacktv voltages */
-	for(int i = 0; i < tc->nsamples; i++)
-	{
-		tc->samples[i] = blanking_level + (((int) buf[i] - tc->params->black_level) *
-			(white_level - blanking_level) / (tc->params->white_level - tc->params->black_level));
-	}
+    /* Scale from Philips to hacktv voltages */
+    for(int i = 0; i < tc->nsamples; i++)
+    {
+        tc->samples[i] = blanking_level + (((int) buf[i] - tc->params->black_level) *
+            (white_level - blanking_level) / (tc->params->white_level - tc->params->black_level));
+    }
 
-	free(buf);
-	return(VID_OK);
+    free(buf);
+    return(VID_OK);
 }
 
 static void _testcard_pm8546_skey_filter_init(pm8546_skey_filter_t* filt)
@@ -342,79 +342,79 @@ static void _testcard_text_process(testcard_t* tc)
 
 int testcard_open(vid_t *s)
 {
-	testcard_t *tc = calloc(1, sizeof(testcard_t));
-	int r;
+    testcard_t *tc = calloc(1, sizeof(testcard_t));
+    int r;
 
-	if(!tc)
-	{
-		free(tc);
-		return(VID_OUT_OF_MEMORY);
-	}
+    if(!tc)
+    {
+        free(tc);
+        return(VID_OUT_OF_MEMORY);
+    }
 
-	r = _testcard_configure(tc, s->conf.testcard_philips_type, s->conf.colour_mode);
+    r = _testcard_configure(tc, s->conf.testcard_philips_type, s->conf.colour_mode);
 
-	if(r != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
+    if(r != VID_OK)
+    {
+        vid_free(s);
+        return(r);
+    }
 
-	r = _testcard_load(tc, s->blanking_level, s->white_level);
-	
-	if(r != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
+    r = _testcard_load(tc, s->blanking_level, s->white_level);
+    
+    if(r != VID_OK)
+    {
+        vid_free(s);
+        return(r);
+    }
 
-	r = _testcard_pm8546_text_load(tc);
-	
-	if(r != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
+    r = _testcard_pm8546_text_load(tc);
+    
+    if(r != VID_OK)
+    {
+        vid_free(s);
+        return(r);
+    }
 
-	s->testcard_philips = tc;
+    s->testcard_philips = tc;
 
-	return VID_OK;
+    return VID_OK;
 }
 
 
 int testcard_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
-	vid_line_t *l = lines[0];
-	int x;
-	
-	l->width     = s->width;
-	l->frame     = s->bframe;
-	l->line      = s->bline;
-	l->vbialloc  = 0;
-	l->lut       = NULL;
-	l->audio     = NULL;
-	l->audio_len = 0;
+    vid_line_t *l = lines[0];
+    int x;
+    
+    l->width     = s->width;
+    l->frame     = s->bframe;
+    l->line      = s->bline;
+    l->vbialloc  = 0;
+    l->lut       = NULL;
+    l->audio     = NULL;
+    l->audio_len = 0;
 
-	if (!s->testcard_philips->pos)
-	{
-		_testcard_text_process(s->testcard_philips);
-	}
-	
-	/* Copy samples into I channel */
-	for(x = 0; x < l->width; x++)
-	{
-		l->output[x * 2] = s->testcard_philips->samples[s->testcard_philips->pos++];
-	}
+    if (!s->testcard_philips->pos)
+    {
+        _testcard_text_process(s->testcard_philips);
+    }
+    
+    /* Copy samples into I channel */
+    for(x = 0; x < l->width; x++)
+    {
+        l->output[x * 2] = s->testcard_philips->samples[s->testcard_philips->pos++];
+    }
 
-	if(s->testcard_philips->pos == s->testcard_philips->nsamples)
-	{
-		s->testcard_philips->pos = 0; /* Back to line 0 */
-	}
-	
-	/* Clear the Q channel */
-	for(x = 0; x < s->max_width; x++)
-	{
-		l->output[x * 2 + 1] = 0;
-	}
-	
-	return(1);
+    if(s->testcard_philips->pos == s->testcard_philips->nsamples)
+    {
+        s->testcard_philips->pos = 0; /* Back to line 0 */
+    }
+    
+    /* Clear the Q channel */
+    for(x = 0; x < s->max_width; x++)
+    {
+        l->output[x * 2 + 1] = 0;
+    }
+    
+    return(1);
 }
