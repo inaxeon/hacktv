@@ -40,11 +40,13 @@ typedef struct {
 } testcard_conf_t;
 
 typedef struct {
-	int16_t* samples;
-	int nsamples;
-	int pos;
-	testcard_conf_t conf;
-	const testcard_params_t *params;
+    int16_t* samples;
+    int16_t* text_samples;
+    int nsamples;
+    int ntext_samples;
+    int pos;
+    testcard_conf_t conf;
+    const testcard_params_t* params;
 } testcard_t;
 
 extern testcard_type_t testcard_type(const char *s);

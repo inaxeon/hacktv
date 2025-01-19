@@ -25,6 +25,9 @@
 #include "video.h"
 #include "test_philips.h"
 
+#define PM8546_BLOCK_MIN 2
+#define PM8546_BLOCK_HEIGHT 42
+
 typedef struct 
 {
     const uint8_t len;
@@ -237,49 +240,99 @@ static int _testcard_load(testcard_t* tc, int blanking_level, int white_level)
 	return(VID_OK);
 }
 
-static int _testcard_text_load(testcard_t* tc)
+static void _testcard_pm8546_skey_filter_init(pm8546_skey_filter_t* filt)
 {
-	uint8_t* buf;
-	int file_len;
 
-	FILE *f = fopen("pm8546a.bin", "rb");
-	
-	if (!f)
-	{
-		perror("fopen");
-		return(VID_ERROR);
-	}
+}
 
-	fseek(f, 0, SEEK_END);
-	file_len = ftell(f);
-	fseek(f, 0, SEEK_SET);
+static void _testcard_pm8546_text_unfold(testcard_t* tc, uint8_t* rom)
+{
+    int i, x, y, total_blocks = 0, max_addr = 0;
 
-	if (file_len != 0x10000)
-	{
-		fprintf(stderr, "testcard: PM8546 character set PROM size incorrect\n");
-		fclose(f);
-		return(VID_ERROR);
-	}
+    /* Calculate boundaries of text samples buffer */
+    for (int i = 0; i < sizeof(_char_blocks) / sizeof(pm8546_promblock_t); i++)
+    {
+        total_blocks += _char_blocks[i].len;
+        if (_char_blocks[i].addr + _char_blocks[i].len > max_addr)
+            max_addr = _char_blocks[i].addr + _char_blocks[i].len;
+    }
 
-	buf = malloc(file_len);
+    tc->ntext_samples = max_addr * PM8546_BLOCK_MIN * PM8546_BLOCK_HEIGHT * 8;
+    tc->text_samples = (int16_t*)calloc(1, tc->ntext_samples * sizeof(int16_t));
 
-	if (!buf)
-	{
-		perror("malloc");
-		fclose(f);
-		return(VID_OUT_OF_MEMORY);
-	}
+    /* Unfold */
+    for (int i = 0; i < sizeof(_char_blocks) / sizeof(pm8546_promblock_t); i++)
+    {
+        int blk_start = (_char_blocks[i].addr * PM8546_BLOCK_MIN * PM8546_BLOCK_HEIGHT * 8);
 
-	if (fread(buf, 1, file_len, f) != file_len)
-	{
-		fclose(f);
-		free(buf);
-		return(VID_ERROR);
-	}
+        for (y = 0; y < PM8546_BLOCK_HEIGHT; y++)
+        {
+            int line_start = blk_start + (y * (_char_blocks[i].len * PM8546_BLOCK_MIN * 8));
 
-	fclose(f);
+            for (x = 0; x < _char_blocks[i].len * PM8546_BLOCK_MIN; x++)
+            {
+                int addr = (_char_blocks[i].addr << 7) + (x << 6 | y);
+                uint8_t data = rom[addr];
 
-	return VID_OK;
+                for (int bit = 0; bit < 8; bit++)
+                {
+                    int destaddr = line_start + (x * 8) + bit;
+                    int val = (((data & (1 << (7 - bit))) == (1 << (7 - bit))));
+                    tc->text_samples[destaddr] = val;
+                }
+            }
+        }
+    }
+
+}
+
+static int _testcard_pm8546_text_load(testcard_t* tc)
+{
+    uint8_t* buf;
+    int file_len;
+
+    FILE* f = fopen("pm8546a.bin", "rb");
+
+    if (!f)
+    {
+        perror("fopen");
+        return(VID_ERROR);
+    }
+
+    fseek(f, 0, SEEK_END);
+    file_len = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    if (file_len != 0x10000)
+    {
+        fprintf(stderr, "testcard: PM8546 character set PROM size incorrect\n");
+        fclose(f);
+        return(VID_ERROR);
+    }
+
+    buf = (uint8_t*)malloc(file_len);
+
+    if (!buf)
+    {
+        perror("malloc");
+        fclose(f);
+        return(VID_OUT_OF_MEMORY);
+    }
+
+    if (fread(buf, 1, file_len, f) != file_len)
+    {
+        fclose(f);
+        free(buf);
+        return(VID_ERROR);
+    }
+
+    fclose(f);
+
+    _testcard_pm8546_text_unfold(tc, buf);
+
+    free(buf);
+
+    return VID_OK;
 }
 
 static void _testcard_text_process(testcard_t* tc)
@@ -314,7 +367,7 @@ int testcard_open(vid_t *s)
 		return(r);
 	}
 
-	r = _testcard_text_load(tc);
+	r = _testcard_pm8546_text_load(tc);
 	
 	if(r != VID_OK)
 	{
