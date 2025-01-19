@@ -4167,26 +4167,9 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		
 		_add_lineprocess(s, "rawbb", 1, NULL, _vid_next_line_rawbb, NULL);
 	}
-	if(s->conf.testcard_philips_type >= 0)
+	if(s->conf.testcard_philips_type > 0)
 	{
-		testcard_t *testcard = calloc(1, sizeof(testcard_t));
-
-		if(!testcard)
-		{
-			r = VID_OUT_OF_MEMORY;
-			vid_free(s);
-			return(r);
-		}
-
-		r = testcard_configure(testcard, s->conf.testcard_philips_type, s->conf.colour_mode);
-		if(r != VID_OK)
-		{
-			vid_free(s);
-			return(r);
-		}
-
-		s->testcard_philips = testcard;
-		r = testcard_open(s->testcard_philips);
+		r = testcard_open(s);
 
 		if(r != VID_OK)
 		{

@@ -20,7 +20,7 @@
 #define _TEST_PHILIPS_H
 
 typedef enum {
-	TESTCARD_PHILIPS_4X3,
+	TESTCARD_PHILIPS_4X3 = 1,
 	TESTCARD_PHILIPS_16X9,
 } testcard_type_t;
 
@@ -40,14 +40,16 @@ typedef struct {
 } testcard_conf_t;
 
 typedef struct {
-	FILE *file;
+	int16_t* samples;
+	int nsamples;
+	int pos;
 	testcard_conf_t conf;
 	const testcard_params_t *params;
 } testcard_t;
 
 extern testcard_type_t testcard_type(const char *s);
 extern int testcard_configure(testcard_t* state, testcard_type_t type, int colour_mode);
-extern int testcard_open(testcard_t* state);
+extern int testcard_open(vid_t *s);
 extern int testcard_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);
 
 #endif

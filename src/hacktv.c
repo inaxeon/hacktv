@@ -828,7 +828,7 @@ int main(int argc, char *argv[])
 					fprintf(stderr, "Unknown test card type.\n");
 					return(-1);
 				}
-
+				
 				s.testcard_philips_type = type;
 				break;
 			}
