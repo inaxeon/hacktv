@@ -347,7 +347,6 @@ int testcard_open(vid_t *s)
 
     if(!tc)
     {
-        free(tc);
         return(VID_OUT_OF_MEMORY);
     }
 
@@ -355,7 +354,7 @@ int testcard_open(vid_t *s)
 
     if(r != VID_OK)
     {
-        vid_free(s);
+        free(tc);
         return(r);
     }
 
@@ -363,7 +362,7 @@ int testcard_open(vid_t *s)
     
     if(r != VID_OK)
     {
-        vid_free(s);
+        free(tc);
         return(r);
     }
 
@@ -371,7 +370,7 @@ int testcard_open(vid_t *s)
     
     if(r != VID_OK)
     {
-        vid_free(s);
+        free(tc);
         return(r);
     }
 
