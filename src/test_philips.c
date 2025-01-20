@@ -82,8 +82,8 @@ const testcard_params_t philips4x3_pal = {
     .sample_rate = 13500000,
     .text1 = &philips4x3_pal_topbox,
     .text2 = &philips4x3_pal_bottombox,
-	.date = &philips4x3_pal_date,
-	.time = &philips4x3_pal_time
+    .date = &philips4x3_pal_date,
+    .time = &philips4x3_pal_time
 };
 
 const testcard_params_t philips4x3_ntsc = {
@@ -627,14 +627,14 @@ static void _testcard_set_box(testcard_t* tc, const testcard_text_boundaries_t* 
 
 static void _testcard_philips_clock_cutout(testcard_t *tc, const testcard_text_boundaries_t* box)
 {
-	int f, y, x, expand;
+    int f, y, x, expand;
 
-	expand = 5;
+    expand = 5;
     
     for (f = 0; f < tc->params->num_fields / 2; f++)
     {
         int frame_start = (f * tc->params->samples_per_line * tc->params->num_lines);
-		int first_line = frame_start + ((box->first_line) * tc->params->samples_per_line);
+        int first_line = frame_start + ((box->first_line) * tc->params->samples_per_line);
 
         for (y = 0; y < box->height / 2; y++)
         {
@@ -652,92 +652,92 @@ static void _testcard_philips_clock_cutout(testcard_t *tc, const testcard_text_b
 
 static void _testcard_write_text(testcard_t* tc, const testcard_text_boundaries_t* box, const char *text)
 {
-	int f, y, x, i, txt_len, max_char, blks_rendered = 0, blks = 0, indent;
-	pm8546_promblock_t* blk;
+    int f, y, x, i, txt_len, max_char, blks_rendered = 0, blks = 0, indent;
+    pm8546_promblock_t* blk;
 
-	max_char = sizeof(_char_blocks) / sizeof(pm8546_promblock_t);
+    max_char = sizeof(_char_blocks) / sizeof(pm8546_promblock_t);
 
-	// _char_blocks
-	txt_len = strlen(text);
+    // _char_blocks
+    txt_len = strlen(text);
 
-	for (i = 0; i < txt_len; i++)
-	{
-		char c = text[i];
-		c -= ' ';
-		
-		if (c >= max_char)
-			continue;
+    for (i = 0; i < txt_len; i++)
+    {
+        char c = text[i];
+        c -= ' ';
+        
+        if (c >= max_char)
+            continue;
 
-		blk = &_char_blocks[(int)c];
-		blks += blk->len;
-	}
+        blk = &_char_blocks[(int)c];
+        blks += blk->len;
+    }
 
-	/* On the real PM8546 we get tied in knots trying to centre the text, but in hacktv everything's software so it's dead simple. */
-	indent = (box->width - (blks * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD / 2 /* Downsample ratio */)) / 2;
+    /* On the real PM8546 we get tied in knots trying to centre the text, but in hacktv everything's software so it's dead simple. */
+    indent = (box->width - (blks * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD / 2 /* Downsample ratio */)) / 2;
 
-	for (i = 0; i < txt_len; i++)
-	{
-		int text_sample_start, char_width_in_memory, char_width_on_screen, next_on_screen_start;
-		char c = text[i];
-		c -= ' ';
-		
-		if (c >= max_char)
-			continue;
+    for (i = 0; i < txt_len; i++)
+    {
+        int text_sample_start, char_width_in_memory, char_width_on_screen, next_on_screen_start;
+        char c = text[i];
+        c -= ' ';
+        
+        if (c >= max_char)
+            continue;
 
-		blk = &_char_blocks[(int)c];
-		text_sample_start = blk->addr * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD * PM8546_BLOCK_HEIGHT;
-		char_width_in_memory = (blk->len * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD);
-		char_width_on_screen = (blk->len * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD) / 2 /* Downsample ratio */;
-		next_on_screen_start = (blks_rendered * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD / 2 /* Downsample ratio */);
+        blk = &_char_blocks[(int)c];
+        text_sample_start = blk->addr * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD * PM8546_BLOCK_HEIGHT;
+        char_width_in_memory = (blk->len * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD);
+        char_width_on_screen = (blk->len * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD) / 2 /* Downsample ratio */;
+        next_on_screen_start = (blks_rendered * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD / 2 /* Downsample ratio */);
 
-		for (f = 0; f < tc->params->num_fields / 2; f++)
-		{
-			int frame_start = (f * tc->params->samples_per_line * tc->params->num_lines);
+        for (f = 0; f < tc->params->num_fields / 2; f++)
+        {
+            int frame_start = (f * tc->params->samples_per_line * tc->params->num_lines);
 
-			for (y = 0; y < box->height / 2; y++)
-			{
-				int linef1_start = frame_start + ((y + box->first_line) * tc->params->samples_per_line) + next_on_screen_start;
-				int linef2_start = frame_start + ((y + 313 + box->first_line) * tc->params->samples_per_line) +	next_on_screen_start;
-				int textf1_start = text_sample_start + (((y * 2) + 0 + (PM8546_BLOCK_HEIGHT - box->height)) * char_width_in_memory);
-				int textf2_start = text_sample_start + (((y * 2) + 1 + (PM8546_BLOCK_HEIGHT - box->height)) * char_width_in_memory);
+            for (y = 0; y < box->height / 2; y++)
+            {
+                int linef1_start = frame_start + ((y + box->first_line) * tc->params->samples_per_line) + next_on_screen_start;
+                int linef2_start = frame_start + ((y + 313 + box->first_line) * tc->params->samples_per_line) +    next_on_screen_start;
+                int textf1_start = text_sample_start + (((y * 2) + 0 + (PM8546_BLOCK_HEIGHT - box->height)) * char_width_in_memory);
+                int textf2_start = text_sample_start + (((y * 2) + 1 + (PM8546_BLOCK_HEIGHT - box->height)) * char_width_in_memory);
 
-				for (x = 0; x < char_width_on_screen; x++)
-				{
-					tc->samples[linef1_start + box->first_sample + indent + x] = tc->text_samples[textf1_start + x];
-					tc->samples[linef2_start + box->first_sample + indent + x] = tc->text_samples[textf2_start + x];
-				}
-			}
-		}
+                for (x = 0; x < char_width_on_screen; x++)
+                {
+                    tc->samples[linef1_start + box->first_sample + indent + x] = tc->text_samples[textf1_start + x];
+                    tc->samples[linef2_start + box->first_sample + indent + x] = tc->text_samples[textf2_start + x];
+                }
+            }
+        }
 
-		blks_rendered += blk->len;
-	}
+        blks_rendered += blk->len;
+    }
 }
 
 static void _testcard_text_process(testcard_t* tc)
 {
-	time_t rawtime;
-	struct tm *info;
-	char time_buf[64];
-	char date_buf[64];
+    time_t rawtime;
+    struct tm *info;
+    char time_buf[64];
+    char date_buf[64];
 
-   	time(&rawtime);
-   	info = localtime(&rawtime);
+       time(&rawtime);
+       info = localtime(&rawtime);
 
-   	strftime(time_buf, sizeof(time_buf), "%H:%M:%S", info);
-	strftime(date_buf, sizeof(time_buf), "%d-%m-%y", info);
+       strftime(time_buf, sizeof(time_buf), "%H:%M:%S", info);
+    strftime(date_buf, sizeof(time_buf), "%d-%m-%y", info);
 
     _testcard_set_box(tc, tc->params->text1, tc->black_level);
     _testcard_set_box(tc, tc->params->text2, tc->black_level);
-	_testcard_set_box(tc, tc->params->date, tc->black_level);
+    _testcard_set_box(tc, tc->params->date, tc->black_level);
     _testcard_set_box(tc, tc->params->time, tc->black_level);
 
-	_testcard_philips_clock_cutout(tc, tc->params->date);
-	_testcard_philips_clock_cutout(tc, tc->params->time);
+    _testcard_philips_clock_cutout(tc, tc->params->date);
+    _testcard_philips_clock_cutout(tc, tc->params->time);
 
-	_testcard_write_text(tc, tc->params->text1, "HackTV");
-	_testcard_write_text(tc, tc->params->text2, "PM5644 EMU");
-	_testcard_write_text(tc, tc->params->time, time_buf);
-	_testcard_write_text(tc, tc->params->date, date_buf);
+    _testcard_write_text(tc, tc->params->text1, "HackTV");
+    _testcard_write_text(tc, tc->params->text2, "PM5644 EMU");
+    _testcard_write_text(tc, tc->params->time, time_buf);
+    _testcard_write_text(tc, tc->params->date, date_buf);
 }
 
 int testcard_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
@@ -753,7 +753,7 @@ int testcard_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
     l->audio     = NULL;
     l->audio_len = 0;
 
-	/* On the real PM8546 we sweat over every CPU cycle, but in hacktv we have CPU time to burn. Do all of the text processing in one go */
+    /* On the real PM8546 we sweat over every CPU cycle, but in hacktv we have CPU time to burn. Do all of the text processing in one go */
     if (!s->testcard_philips->pos)
         _testcard_text_process(s->testcard_philips);
     
