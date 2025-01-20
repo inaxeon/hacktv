@@ -43,18 +43,40 @@ typedef struct {
     int ntaps;
 } pm8546_skey_filter_t;
 
+const testcard_text_boundaries_t philips4x3_pal_topbox = {
+    .first_line = 50,
+    .first_sample = 419,
+    .height = PM8546_BLOCK_HEIGHT,
+    .width = 147
+};
+
+const testcard_text_boundaries_t philips4x3_pal_bottombox = {
+    .first_line = 239,
+    .first_sample = 381,
+    .height = PM8546_BLOCK_HEIGHT,
+    .width = 223
+};
+
 const testcard_params_t philips4x3_pal = {
     .file_name = "philips_4x3_pal.bin",
-    .black_level = 0xc00,
-    .white_level = 0x340,
+    .src_black_level = 0xc00,
+    .src_white_level = 0x340,
+    .num_lines = 625,
+    .samples_per_line = 864,
+    .num_fields = 8,
     .is_16x9 = 0,
-    .sample_rate = 13500000
+    .sample_rate = 13500000,
+    .text1 = &philips4x3_pal_topbox,
+    .text2 = &philips4x3_pal_bottombox
 };
 
 const testcard_params_t philips4x3_ntsc = {
     .file_name = "philips_4x3_ntsc.bin",
-    .black_level = 0xc00,
-    .white_level = 0x313,
+    .src_black_level = 0xc00,
+    .src_white_level = 0x313,
+    .num_lines = 525,
+    .samples_per_line = 858,
+    .num_fields = 4,
     .is_16x9 = 0,
     .sample_rate = 13500000
 };
@@ -187,10 +209,10 @@ static int _testcard_configure(testcard_t* state, testcard_type_t type, int colo
 
     state->params = params;
     
-    return VID_OK;
+    return (VID_OK);
 }
 
-static int _testcard_load(testcard_t* tc, int blanking_level, int white_level)
+static int _testcard_load(testcard_t* tc)
 {
     int16_t* buf;
     int file_len;
@@ -228,13 +250,11 @@ static int _testcard_load(testcard_t* tc, int blanking_level, int white_level)
     tc->samples = malloc(tc->nsamples * sizeof(*buf));
     tc->pos = 0;
 
-    printf("blanking_level: %d white_level: %d\n", blanking_level, white_level);
-
     /* Scale from Philips to hacktv voltages */
     for(int i = 0; i < tc->nsamples; i++)
     {
-        tc->samples[i] = blanking_level + (((int) buf[i] - tc->params->black_level) *
-            (white_level - blanking_level) / (tc->params->white_level - tc->params->black_level));
+        tc->samples[i] = tc->black_level + (((int) buf[i] - tc->params->src_black_level) *
+            (tc->white_level - tc->black_level) / (tc->params->src_white_level - tc->params->src_black_level));
     }
 
     free(buf);
@@ -272,8 +292,7 @@ static int _testcard_pm8546_skey_filter_init(pm8546_skey_filter_t* filter)
     for (i = 0; i < filter->ntaps; i++)
         filter->scale += filter->taps[i];
 
-
-    return VID_OK;
+    return(VID_OK);
 }
 
 static int _testcard_pm8546_skey_filter_process(pm8546_skey_filter_t* filter, int16_t* samples, int nsamples)
@@ -309,7 +328,7 @@ static int _testcard_pm8546_skey_filter_process(pm8546_skey_filter_t* filter, in
     return (VID_OK);
 }
 
-static void _testcard_pm8546_text_unfold(testcard_t* tc, uint8_t* rom, int black_level, int white_level)
+static void _testcard_pm8546_text_unfold(testcard_t* tc, uint8_t* rom)
 {
     int x, y, total_blocks = 0, max_addr = 0;
 
@@ -341,7 +360,7 @@ static void _testcard_pm8546_text_unfold(testcard_t* tc, uint8_t* rom, int black
                 for (int bit = 0; bit < 8; bit++)
                 {
                     int destaddr = line_start + (x * 8) + bit;
-                    int val = (((data & (1 << (7 - bit))) == (1 << (7 - bit)))) ? white_level : black_level;
+                    int val = (((data & (1 << (7 - bit))) == (1 << (7 - bit)))) ? tc->white_level : tc->black_level;
                     tc->text_samples[destaddr] = val;
                 }
             }
@@ -349,7 +368,7 @@ static void _testcard_pm8546_text_unfold(testcard_t* tc, uint8_t* rom, int black
     }
 }
 
-static int _testcard_pm8546_text_calculate_flanks(testcard_t* tc, pm8546_skey_filter_t* filter, int black_level)
+static int _testcard_pm8546_text_calculate_flanks(testcard_t* tc, pm8546_skey_filter_t* filter)
 {
     int i, y, r = VID_OK;
 
@@ -362,8 +381,8 @@ static int _testcard_pm8546_text_calculate_flanks(testcard_t* tc, pm8546_skey_fi
             int line_len = _char_blocks[i].len * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD;
             int line_start = blk_start + (y * line_len);
 
-            if (tc->text_samples[line_start] != black_level)
-                tc->text_samples[line_start] = black_level; /* Clip the first pixel of a few characters which start with white to ensure rise time is respected */
+            if (tc->text_samples[line_start] != tc->black_level)
+                tc->text_samples[line_start] = tc->black_level; /* Clip the first pixel of a few characters which start with white to ensure rise time is respected */
 
             r = _testcard_pm8546_skey_filter_process(filter, &tc->text_samples[line_start], line_len);
 
@@ -375,7 +394,7 @@ static int _testcard_pm8546_text_calculate_flanks(testcard_t* tc, pm8546_skey_fi
     return (r);
 }
 
-static int _testcard_pm8546_text_downsample(testcard_t* tc, int black_level)
+static int _testcard_pm8546_text_downsample(testcard_t* tc)
 {
     int i, y;
     fir_int16_t fir;
@@ -410,7 +429,7 @@ static int _testcard_pm8546_text_downsample(testcard_t* tc, int black_level)
             }
 
             for (int x = 0; x < line_len; x++)
-                samples[x] = black_level; /* Feed the filter some black so it's nice and steady before we pass in the real samples */
+                samples[x] = tc->black_level; /* Feed the filter some black so it's nice and steady before we pass in the real samples */
 
             for (int x = 0; x < line_len; x++)
                 samples[x + line_len] = tc->text_samples[line_start + x];
@@ -426,7 +445,7 @@ static int _testcard_pm8546_text_downsample(testcard_t* tc, int black_level)
         }
     }
 
-    return (VID_OK);
+    return(VID_OK);
 }
 
 static int _testcard_pm8546_rom_load(testcard_t* tc, uint8_t** buf)
@@ -470,10 +489,10 @@ static int _testcard_pm8546_rom_load(testcard_t* tc, uint8_t** buf)
 
     fclose(f);
 
-    return VID_OK;
+    return(VID_OK);
 }
 
-int _testcard_pm8546_text_init(testcard_t* tc, int black_level, int white_level)
+int _testcard_pm8546_text_init(testcard_t* tc)
 {
     int r = VID_OK;
     uint8_t* buf;
@@ -488,7 +507,7 @@ int _testcard_pm8546_text_init(testcard_t* tc, int black_level, int white_level)
     /* Unfold. After we this we have an aliased raster at hacktv's internal voltages.
      * Completely unusable but a starting point at least.
      */
-    _testcard_pm8546_text_unfold(tc, buf, black_level, white_level);
+    _testcard_pm8546_text_unfold(tc, buf);
 
     free(buf); /* Free contents of PROM. No longer needed. */
 
@@ -502,18 +521,18 @@ int _testcard_pm8546_text_init(testcard_t* tc, int black_level, int white_level)
      * After this process is completed we have an accurate reconstruction of the Y signal which normally passes
      * from the PM8546 to the base generator, once again still at hacktv's internal voltage levels.
      */
-    r = _testcard_pm8546_text_calculate_flanks(tc, &skey, black_level);
+    r = _testcard_pm8546_text_calculate_flanks(tc, &skey);
 
     if (r != VID_OK)
         return (r);
 
     free(skey.taps);
 
-    /* If only we were finished at this point. PM8546 doesn't have the same clock as the base unit.
+    /* If only we were finished at this point. The PM8546 doesn't have the same sample rate as the base unit.
      * Not normally a problem on the real thing because text mixing is analogue.
      * But we're digital here so it's a problem.
      */
-    r = _testcard_pm8546_text_downsample(tc, black_level);
+    r = _testcard_pm8546_text_downsample(tc);
 
     if (r != VID_OK)
         return (r);
@@ -521,15 +540,13 @@ int _testcard_pm8546_text_init(testcard_t* tc, int black_level, int white_level)
     return (r);
 }
 
-static void _testcard_text_process(testcard_t* tc)
-{
-
-}
-
 int testcard_open(vid_t *s)
 {
     testcard_t *tc = calloc(1, sizeof(testcard_t));
     int r = VID_OK;
+
+    tc->black_level = s->blanking_level;
+    tc->white_level = s->white_level;
 
     if(!tc)
     {
@@ -545,7 +562,7 @@ int testcard_open(vid_t *s)
         return(r);
     }
 
-    r = _testcard_load(tc, s->blanking_level, s->white_level);
+    r = _testcard_load(tc);
     
     if(r != VID_OK)
     {
@@ -553,7 +570,7 @@ int testcard_open(vid_t *s)
         return(r);
     }
 
-    r = _testcard_pm8546_text_init(tc, s->blanking_level, s->white_level);
+    r = _testcard_pm8546_text_init(tc);
     
     if(r != VID_OK)
     {
@@ -570,6 +587,33 @@ int testcard_open(vid_t *s)
     return(r);
 }
 
+static void _testcard_clear_box(testcard_t* tc, const testcard_text_boundaries_t* box)
+{
+    int f, y, x;
+    
+    for (f = 0; f < tc->params->num_fields / 2; f++)
+    {
+        int frame_start = (f * tc->params->samples_per_line * tc->params->num_lines);
+
+        for (y = 0; y < box->height / 2; y++)
+        {
+            int linef1_start = frame_start + ((y + box->first_line) * tc->params->samples_per_line);
+            int linef2_start = frame_start + ((y + 313 + box->first_line) * tc->params->samples_per_line);
+
+            for (x = 0; x < box->width; x++)
+            {
+                tc->samples[linef1_start + box->first_sample + x] = tc->black_level;
+                tc->samples[linef2_start + box->first_sample + x] = tc->black_level;
+            }
+        }
+    }
+}
+
+static void _testcard_text_process(testcard_t* tc)
+{
+    _testcard_clear_box(tc, tc->params->text1);
+    _testcard_clear_box(tc, tc->params->text2);
+}
 
 int testcard_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
