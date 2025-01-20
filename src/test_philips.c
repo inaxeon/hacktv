@@ -26,10 +26,10 @@
 #include "video.h"
 #include "test_philips.h"
 
-#define PM8546_BLOCK_MIN    2
-#define PM8546_BLOCK_FOLD    8
-#define PM8546_BLOCK_HEIGHT 42
-#define PM8546_SAMPLE_RATE  27000000 /* Not always true, but true for what's been implemented so far */
+#define PM8546_BLOCK_MIN        2
+#define PM8546_BLOCK_FOLD       8
+#define PM8546_BLOCK_HEIGHT     42
+#define PM8546_SAMPLE_RATE      27000000 /* Not always true, but true for what's been implemented so far */
 
 typedef struct 
 {
@@ -156,13 +156,9 @@ pm8546_promblock_t _char_blocks[] = {
 testcard_type_t testcard_type(const char *s)
 {
     if (!strcmp(s, "philips4x3"))
-    {
         return TESTCARD_PHILIPS_4X3;
-    }
     if (!strcmp(s, "philips16x9"))
-    {
         return TESTCARD_PHILIPS_16X9;
-    }
 
     return -1;
 }
@@ -353,7 +349,7 @@ static void _testcard_pm8546_text_unfold(testcard_t* tc, uint8_t* rom, int black
     }
 }
 
-static int _testcard_pm8546_calculate_flanks(testcard_t* tc, pm8546_skey_filter_t* filter, int black_level)
+static int _testcard_pm8546_text_calculate_flanks(testcard_t* tc, pm8546_skey_filter_t* filter, int black_level)
 {
     int i, y, r = VID_OK;
 
@@ -372,16 +368,14 @@ static int _testcard_pm8546_calculate_flanks(testcard_t* tc, pm8546_skey_filter_
             r = _testcard_pm8546_skey_filter_process(filter, &tc->text_samples[line_start], line_len);
 
             if (r != VID_OK)
-            {
                 return (r);
-            }
         }
     }
 
     return (r);
 }
 
-static int _testcard_pm8546_downsample(testcard_t* tc, int black_level)
+static int _testcard_pm8546_text_downsample(testcard_t* tc, int black_level)
 {
     int i, y;
     fir_int16_t fir;
@@ -489,11 +483,11 @@ int _testcard_pm8546_text_init(testcard_t* tc, int black_level, int white_level)
     r = _testcard_pm8546_rom_load(tc, &buf);
     
     if (r != VID_OK)
-    {
         return (r);
-    }
 
-    /* Convert to int16 raster */
+    /* Unfold. After we this we have an aliased raster at hacktv's internal voltages.
+     * Completely unusable but a starting point at least.
+     */
     _testcard_pm8546_text_unfold(tc, buf, black_level, white_level);
 
     free(buf); /* Free contents of PROM. No longer needed. */
@@ -502,24 +496,27 @@ int _testcard_pm8546_text_init(testcard_t* tc, int black_level, int white_level)
     _testcard_pm8546_skey_filter_init(&skey);
 
     if (r != VID_OK)
-    {
         return (r);
-    }
 
-    /* For correct appearance of text it is important that the PM8546's sallen-key filters are correctly emulated. */
-    r = _testcard_pm8546_calculate_flanks(tc, &skey, black_level);
+    /* For correct appearance of text it is important that the PM8546's sallen-key filters are correctly emulated.
+     * After this process is completed we have an accurate reconstruction of the Y signal which normally passes
+     * from the PM8546 to the base generator, once again still at hacktv's internal voltage levels.
+     */
+    r = _testcard_pm8546_text_calculate_flanks(tc, &skey, black_level);
 
     if (r != VID_OK)
-    {
         return (r);
-    }
 
     free(skey.taps);
 
     /* If only we were finished at this point. PM8546 doesn't have the same clock as the base unit.
-     * Not normally a problem because text mixing is analogue. But we're digital here so it's a problem.
+     * Not normally a problem on the real thing because text mixing is analogue.
+     * But we're digital here so it's a problem.
      */
-    _testcard_pm8546_downsample(tc, black_level);
+    r = _testcard_pm8546_text_downsample(tc, black_level);
+
+    if (r != VID_OK)
+        return (r);
 
     return (r);
 }
@@ -532,11 +529,12 @@ static void _testcard_text_process(testcard_t* tc)
 int testcard_open(vid_t *s)
 {
     testcard_t *tc = calloc(1, sizeof(testcard_t));
-    int r;
+    int r = VID_OK;
 
     if(!tc)
     {
-        return(VID_OUT_OF_MEMORY);
+        r = VID_OUT_OF_MEMORY;
+        return(r);
     }
 
     r = _testcard_configure(tc, s->conf.testcard_philips_type, s->conf.colour_mode);
@@ -569,7 +567,7 @@ int testcard_open(vid_t *s)
 
     s->testcard_philips = tc;
 
-    return VID_OK;
+    return(r);
 }
 
 
@@ -587,26 +585,18 @@ int testcard_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
     l->audio_len = 0;
 
     if (!s->testcard_philips->pos)
-    {
         _testcard_text_process(s->testcard_philips);
-    }
     
     /* Copy samples into I channel */
     for(x = 0; x < l->width; x++)
-    {
         l->output[x * 2] = s->testcard_philips->samples[s->testcard_philips->pos++];
-    }
 
     if(s->testcard_philips->pos == s->testcard_philips->nsamples)
-    {
         s->testcard_philips->pos = 0; /* Back to line 0 */
-    }
     
     /* Clear the Q channel */
     for(x = 0; x < s->max_width; x++)
-    {
         l->output[x * 2 + 1] = 0;
-    }
     
     return(1);
 }
