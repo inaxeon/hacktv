@@ -22,11 +22,14 @@
 
 #include "hacktv.h"
 #include "av.h"
+#include "fir.h"
 #include "video.h"
 #include "test_philips.h"
 
-#define PM8546_BLOCK_MIN 2
+#define PM8546_BLOCK_MIN    2
+#define PM8546_BLOCK_FOLD    8
 #define PM8546_BLOCK_HEIGHT 42
+#define PM8546_SAMPLE_RATE  27000000 /* Not always true, but true for what's been implemented so far */
 
 typedef struct 
 {
@@ -242,29 +245,19 @@ static int _testcard_load(testcard_t* tc, int blanking_level, int white_level)
     return(VID_OK);
 }
 
-static int _testcard_pm8546_skey_filter_init(pm8546_skey_filter_t** filter)
+static int _testcard_pm8546_skey_filter_init(pm8546_skey_filter_t* filter)
 {
-    pm8546_skey_filter_t* filt;
     double text_rise_time = 150E-9; // Text rise time
-    double fs = 27000000; // PM8546 pixel clock
+    double fs = PM8546_SAMPLE_RATE; // PM8546 pixel clock
     double ax = floor(1.03734 * text_rise_time * fs);
     double ampl_r = 0;
     int i;
 
-    filt = (pm8546_skey_filter_t*)calloc(1, sizeof(pm8546_skey_filter_t));
+    filter->ntaps = (ax * 2) + 2;
+    filter->taps = (double *)calloc(filter->ntaps, sizeof(double));
 
-    if (!filt)
+    if (!filter->taps)
     {
-        perror("malloc");
-        return(VID_OUT_OF_MEMORY);
-    }
-
-    filt->ntaps = (ax * 2) + 2;
-    filt->taps = (double *)calloc(filt->ntaps, sizeof(double));
-
-    if (!filt->taps)
-    {
-        free(filt);
         perror("malloc");
         return(VID_OUT_OF_MEMORY);
     }
@@ -273,17 +266,16 @@ static int _testcard_pm8546_skey_filter_init(pm8546_skey_filter_t** filter)
     {
         double y = (i - ax) / text_rise_time / fs / 2.07468 + 0.5;
         double ampl = (y - sin(2 * M_PI * y) / (2 * M_PI));
-        filt->taps[i] = ampl - ampl_r;
+        filter->taps[i] = ampl - ampl_r;
         ampl_r = ampl;
     }
 
-    filt->taps[i] = (1 - ampl_r);
-    filt->scale = 0;
+    filter->taps[i] = (1 - ampl_r);
+    filter->scale = 0;
 
-    for (i = 0; i < filt->ntaps; i++)
-        filt->scale += filt->taps[i];
+    for (i = 0; i < filter->ntaps; i++)
+        filter->scale += filter->taps[i];
 
-    *filter = filt;
 
     return VID_OK;
 }
@@ -339,7 +331,7 @@ static void _testcard_pm8546_text_unfold(testcard_t* tc, uint8_t* rom, int black
     /* Unfold */
     for (int i = 0; i < sizeof(_char_blocks) / sizeof(pm8546_promblock_t); i++)
     {
-        int blk_start = (_char_blocks[i].addr * PM8546_BLOCK_MIN * PM8546_BLOCK_HEIGHT * 8);
+        int blk_start = (_char_blocks[i].addr * PM8546_BLOCK_MIN * PM8546_BLOCK_HEIGHT * PM8546_BLOCK_FOLD);
 
         for (y = 0; y < PM8546_BLOCK_HEIGHT; y++)
         {
@@ -367,16 +359,17 @@ static int _testcard_pm8546_calculate_flanks(testcard_t* tc, pm8546_skey_filter_
 
     for (i = 0; i < sizeof(_char_blocks) / sizeof(pm8546_promblock_t); i++)
     {
-        int blk_start = (_char_blocks[i].addr * 2 * 42 * 8);
+        int blk_start = (_char_blocks[i].addr * PM8546_BLOCK_MIN * PM8546_BLOCK_HEIGHT * PM8546_BLOCK_FOLD);
 
-        for (y = 0; y < 42; y++)
+        for (y = 0; y < PM8546_BLOCK_HEIGHT; y++)
         {
-            int line_start = blk_start + (y * (_char_blocks[i].len * 2 * 8));
+            int line_len = _char_blocks[i].len * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD;
+            int line_start = blk_start + (y * line_len);
 
             if (tc->text_samples[line_start] != black_level)
                 tc->text_samples[line_start] = black_level; /* Clip the first pixel of a few characters which start with white to ensure rise time is respected */
 
-            r = _testcard_pm8546_skey_filter_process(filter, &tc->text_samples[line_start], _char_blocks[i].len * PM8546_BLOCK_MIN * 8);
+            r = _testcard_pm8546_skey_filter_process(filter, &tc->text_samples[line_start], line_len);
 
             if (r != VID_OK)
             {
@@ -386,6 +379,60 @@ static int _testcard_pm8546_calculate_flanks(testcard_t* tc, pm8546_skey_filter_
     }
 
     return (r);
+}
+
+static int _testcard_pm8546_downsample(testcard_t* tc, int black_level)
+{
+    int i, y;
+    fir_int16_t fir;
+
+    fir_int16_resampler_init(&fir, (r64_t) { tc->params->sample_rate, 1 }, (r64_t) { PM8546_SAMPLE_RATE, 1 });
+
+    for (i = 0; i < sizeof(_char_blocks) / sizeof(pm8546_promblock_t); i++)
+    {
+        int blk_start = (_char_blocks[i].addr * PM8546_BLOCK_MIN * PM8546_BLOCK_HEIGHT * PM8546_BLOCK_FOLD);
+
+        for (y = 0; y < PM8546_BLOCK_HEIGHT; y++)
+        {
+            int line_len = _char_blocks[i].len * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD;
+            int line_start = blk_start + (y * line_len);
+            int16_t *downsamples, *samples;
+
+            samples = (int16_t *)calloc(line_len * 3, sizeof(int16_t));
+
+            if (!samples)
+            {
+                perror("malloc");
+                return(VID_OUT_OF_MEMORY);
+            }
+
+            downsamples = (int16_t *)calloc(line_len * 3, sizeof(int16_t));
+
+            if (!downsamples)
+            {
+                free(samples);
+                perror("malloc");
+                return(VID_OUT_OF_MEMORY);
+            }
+
+            for (int x = 0; x < line_len; x++)
+                samples[x] = black_level; /* Feed the filter some black so it's nice and steady before we pass in the real samples */
+
+            for (int x = 0; x < line_len; x++)
+                samples[x + line_len] = tc->text_samples[line_start + x];
+
+            fir_int16_feed(&fir, samples, line_len * 3, 1);
+            fir_int16_process(&fir, downsamples, line_len * 3, 1);
+
+            for (int x = 0; x < line_len; x++)
+                tc->text_samples[line_start + x] = downsamples[x + (line_len / 2)];
+
+            free(samples);
+            free(downsamples);
+        }
+    }
+
+    return (VID_OK);
 }
 
 static int _testcard_pm8546_rom_load(testcard_t* tc, uint8_t** buf)
@@ -436,7 +483,7 @@ int _testcard_pm8546_text_init(testcard_t* tc, int black_level, int white_level)
 {
     int r = VID_OK;
     uint8_t* buf;
-    pm8546_skey_filter_t* filter;
+    pm8546_skey_filter_t skey;
 
     /* Read in character PROM from disk */
     r = _testcard_pm8546_rom_load(tc, &buf);
@@ -452,7 +499,7 @@ int _testcard_pm8546_text_init(testcard_t* tc, int black_level, int white_level)
     free(buf); /* Free contents of PROM. No longer needed. */
 
     /* Init filter */
-    _testcard_pm8546_skey_filter_init(&filter);
+    _testcard_pm8546_skey_filter_init(&skey);
 
     if (r != VID_OK)
     {
@@ -460,15 +507,19 @@ int _testcard_pm8546_text_init(testcard_t* tc, int black_level, int white_level)
     }
 
     /* For correct appearance of text it is important that the PM8546's sallen-key filters are correctly emulated. */
-    r = _testcard_pm8546_calculate_flanks(tc, filter, black_level);
+    r = _testcard_pm8546_calculate_flanks(tc, &skey, black_level);
 
     if (r != VID_OK)
     {
         return (r);
     }
 
-    free(filter->taps);
-    free(filter);
+    free(skey.taps);
+
+    /* If only we were finished at this point. PM8546 doesn't have the same clock as the base unit.
+     * Not normally a problem because text mixing is analogue. But we're digital here so it's a problem.
+     */
+    _testcard_pm8546_downsample(tc, black_level);
 
     return (r);
 }
@@ -512,7 +563,7 @@ int testcard_open(vid_t *s)
         return(r);
     }
 
-	FILE* f = fopen("test_out.bin", "wb");
+    FILE* f = fopen("test_out.bin", "wb");
     fwrite((void *)tc->text_samples, sizeof(int16_t), tc->ntext_samples, f);
     fclose(f);
 
