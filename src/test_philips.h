@@ -43,6 +43,8 @@ typedef struct
     int is_16x9;
     const testcard_text_boundaries_t* text1;
     const testcard_text_boundaries_t* text2;
+	const testcard_text_boundaries_t* date;
+	const testcard_text_boundaries_t* time;
 } testcard_params_t;
 
 typedef struct {
