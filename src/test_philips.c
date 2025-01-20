@@ -697,7 +697,7 @@ static void _testcard_write_text(testcard_t* tc, const testcard_text_boundaries_
             for (y = 0; y < box->height / 2; y++)
             {
                 int linef1_start = frame_start + ((y + box->first_line) * tc->params->samples_per_line) + next_on_screen_start;
-                int linef2_start = frame_start + ((y + 313 + box->first_line) * tc->params->samples_per_line) +    next_on_screen_start;
+                int linef2_start = frame_start + ((y + 313 + box->first_line) * tc->params->samples_per_line) + next_on_screen_start;
                 int textf1_start = text_sample_start + (((y * 2) + 0 + (PM8546_BLOCK_HEIGHT - box->height)) * char_width_in_memory);
                 int textf2_start = text_sample_start + (((y * 2) + 1 + (PM8546_BLOCK_HEIGHT - box->height)) * char_width_in_memory);
 
@@ -720,10 +720,10 @@ static void _testcard_text_process(testcard_t* tc)
     char time_buf[64];
     char date_buf[64];
 
-       time(&rawtime);
-       info = localtime(&rawtime);
+    time(&rawtime);
+    info = localtime(&rawtime);
 
-       strftime(time_buf, sizeof(time_buf), "%H:%M:%S", info);
+    strftime(time_buf, sizeof(time_buf), "%H:%M:%S", info);
     strftime(date_buf, sizeof(time_buf), "%d-%m-%y", info);
 
     _testcard_set_box(tc, tc->params->text1, tc->black_level);
