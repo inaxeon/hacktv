@@ -594,9 +594,9 @@ int testcard_open(vid_t *s)
         return(r);
     }
 
-    FILE* f = fopen("test_out.bin", "wb");
-    fwrite((void *)tc->text_samples, sizeof(int16_t), tc->ntext_samples, f);
-    fclose(f);
+    // FILE* f = fopen("test_out.bin", "wb");
+    // fwrite((void *)tc->text_samples, sizeof(int16_t), tc->ntext_samples, f);
+    // fclose(f);
 
     s->testcard_philips = tc;
 
