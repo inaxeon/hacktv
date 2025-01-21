@@ -105,7 +105,7 @@ const testcard_text_boundaries_t philips4x3_ntsc_time = {
 
 const testcard_params_t philips4x3_pal = {
 	.file_name = "philips_4x3_pal.bin",
-	.src_black_level = 0xc00,
+	.src_blanking_level = 0xc00,
 	.src_white_level = 0x340,
 	.num_lines = 625,
 	.samples_per_line = 864,
@@ -120,7 +120,7 @@ const testcard_params_t philips4x3_pal = {
 
 const testcard_params_t philips4x3_ntsc = {
 	.file_name = "philips_4x3_ntsc.bin",
-	.src_black_level = 0xc00,
+	.src_blanking_level = 0xc00,
 	.src_white_level = 0x313,
 	.num_lines = 525,
 	.samples_per_line = 858,
@@ -314,8 +314,8 @@ static int _testcard_load(testcard_t* tc)
 	/* Scale from Philips to hacktv voltages */
 	for(int i = 0; i < tc->nsamples; i++)
 	{
-		tc->samples[i] = tc->black_level + (((int) buf[i] - tc->params->src_black_level) *
-			(tc->white_level - tc->black_level) / (tc->params->src_white_level - tc->params->src_black_level));
+		tc->samples[i] = tc->blanking_level + (((int) buf[i] - tc->params->src_blanking_level) *
+			(tc->white_level - tc->blanking_level) / (tc->params->src_white_level - tc->params->src_blanking_level));
 	}
 
 	free(buf);
@@ -618,7 +618,8 @@ int testcard_open(vid_t *s)
 	testcard_t *tc = calloc(1, sizeof(testcard_t));
 	int r = VID_OK;
 
-	tc->black_level = s->blanking_level;
+	tc->blanking_level = s->blanking_level;
+	tc->black_level = s->black_level;
 	tc->white_level = s->white_level;
 
 	if(!tc)

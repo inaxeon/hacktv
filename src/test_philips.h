@@ -34,7 +34,7 @@ typedef struct {
 typedef struct
 {
 	const char *file_name;
-	uint16_t src_black_level;
+	uint16_t src_blanking_level;
 	uint16_t src_white_level;
 	int num_lines;
 	long sample_rate;
@@ -54,8 +54,9 @@ typedef struct {
 } testcard_conf_t;
 
 typedef struct {
-	uint16_t black_level;
-	uint16_t white_level;
+	int16_t blanking_level;
+	int16_t black_level;
+	int16_t white_level;
 	int16_t* samples;
 	int16_t* text_samples;
 	int nsamples;
