@@ -20,49 +20,49 @@
 #define _TEST_PHILIPS_H
 
 typedef enum {
-    TESTCARD_PHILIPS_4X3 = 1,
-    TESTCARD_PHILIPS_16X9,
+	TESTCARD_PHILIPS_4X3 = 1,
+	TESTCARD_PHILIPS_16X9,
 } testcard_type_t;
 
 typedef struct {
-    int first_line;
-    int first_sample;
-    int height;
-    int width;
+	int first_line;
+	int first_sample;
+	int height;
+	int width;
 } testcard_text_boundaries_t;
 
 typedef struct
 {
-    const char *file_name;
-    uint16_t src_black_level;
-    uint16_t src_white_level;
+	const char *file_name;
+	uint16_t src_black_level;
+	uint16_t src_white_level;
 	int num_lines;
-    long sample_rate;
-    int samples_per_line;
-    int num_fields;
-    int is_16x9;
-    const testcard_text_boundaries_t* text1;
-    const testcard_text_boundaries_t* text2;
+	long sample_rate;
+	int samples_per_line;
+	int num_fields;
+	int is_16x9;
+	const testcard_text_boundaries_t* text1;
+	const testcard_text_boundaries_t* text2;
 	const testcard_text_boundaries_t* date;
 	const testcard_text_boundaries_t* time;
 } testcard_params_t;
 
 typedef struct {
-    testcard_type_t type;
-    char text1[128];
-    char text2[128];
+	testcard_type_t type;
+	char text1[128];
+	char text2[128];
 } testcard_conf_t;
 
 typedef struct {
 	uint16_t black_level;
-    uint16_t white_level;
-    int16_t* samples;
-    int16_t* text_samples;
-    int nsamples;
-    int ntext_samples;
-    int pos;
-    testcard_conf_t conf;
-    const testcard_params_t* params;
+	uint16_t white_level;
+	int16_t* samples;
+	int16_t* text_samples;
+	int nsamples;
+	int ntext_samples;
+	int pos;
+	testcard_conf_t conf;
+	const testcard_params_t* params;
 } testcard_t;
 
 extern testcard_type_t testcard_type(const char *s);
