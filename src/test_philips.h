@@ -49,8 +49,8 @@ typedef struct
 
 typedef struct {
     testcard_type_t type;
-    const char *upper_text;
-    const char *lower_text;
+    char text1[128];
+    char text2[128];
 } testcard_conf_t;
 
 typedef struct {

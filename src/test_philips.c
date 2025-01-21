@@ -41,6 +41,7 @@ typedef struct {
     double* taps;
     double scale;
     int ntaps;
+	int16_t black_level;
 } pm8546_skey_filter_t;
 
 const testcard_text_boundaries_t philips4x3_pal_topbox = {
@@ -201,16 +202,16 @@ testcard_type_t testcard_type(const char *s)
     return -1;
 }
 
-static int _testcard_configure(testcard_t* state, testcard_type_t type, int colour_mode)
+static int _testcard_configure(testcard_t* state, vid_t *vid)
 {
     const testcard_params_t *params = NULL;
 
-    switch (type)
+    switch (vid->conf.testcard_philips_type)
     {
         case TESTCARD_PHILIPS_4X3:
-            if (colour_mode == VID_PAL)
+            if (vid->conf.colour_mode == VID_PAL)
                 params = &philips4x3_pal;
-            if (colour_mode == VID_NTSC)
+            if (vid->conf.colour_mode == VID_NTSC)
                 params = &philips4x3_ntsc;
             break;
         default:
@@ -222,6 +223,15 @@ static int _testcard_configure(testcard_t* state, testcard_type_t type, int colo
         fprintf(stderr, "testcard: No testcard for this mode\n");
         return(VID_ERROR);
     }
+
+	if (params->sample_rate != vid->pixel_rate)
+	{
+		fprintf(stderr, "testcard: pixel rate must be set to %lu\n", params->sample_rate);
+        return(VID_ERROR);
+	}
+
+	strcpy(state->conf.text1, vid->conf.testcard_text1);
+	strcpy(state->conf.text2, vid->conf.testcard_text2);
 
     state->params = params;
     
@@ -277,7 +287,7 @@ static int _testcard_load(testcard_t* tc)
     return(VID_OK);
 }
 
-static int _testcard_pm8546_skey_filter_init(pm8546_skey_filter_t* filter)
+static int _testcard_pm8546_skey_filter_init(pm8546_skey_filter_t* filter, int16_t black_level)
 {
     double text_rise_time = 150E-9; // Text rise time
     double fs = PM8546_SAMPLE_RATE; // PM8546 pixel clock
@@ -287,6 +297,7 @@ static int _testcard_pm8546_skey_filter_init(pm8546_skey_filter_t* filter)
 
     filter->ntaps = (ax * 2) + 2;
     filter->taps = (double *)calloc(filter->ntaps, sizeof(double));
+	filter->black_level = black_level;
 
     if (!filter->taps)
     {
@@ -330,7 +341,7 @@ static int _testcard_pm8546_skey_filter_process(pm8546_skey_filter_t* filter, in
             if (idx < 0)
                 idx = 0;
 
-            sum = sum + ((idx >= nsamples ? 0 : samples[idx]) * filter->taps[j]) / filter->scale;
+            sum = sum + ((idx >= nsamples ? filter->black_level : samples[idx]) * filter->taps[j]) / filter->scale;
         }
 
         tmp[i] = (int16_t)sum;
@@ -413,6 +424,38 @@ static int _testcard_pm8546_text_calculate_flanks(testcard_t* tc, pm8546_skey_fi
 static int _testcard_pm8546_text_downsample(testcard_t* tc)
 {
     int i, y;
+#if 0
+    for (i = 0; i < sizeof(_char_blocks) / sizeof(pm8546_promblock_t); i++)
+    {
+        int blk_start = (_char_blocks[i].addr * PM8546_BLOCK_MIN * PM8546_BLOCK_HEIGHT * PM8546_BLOCK_FOLD);
+
+        for (y = 0; y < PM8546_BLOCK_HEIGHT; y++)
+        {
+            int line_len = _char_blocks[i].len * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD;
+            int line_start = blk_start + (y * line_len);
+            int16_t *samples;
+
+            samples = (int16_t *)calloc(line_len * 3, sizeof(int16_t));
+
+            if (!samples)
+            {
+                perror("malloc");
+                return(VID_OUT_OF_MEMORY);
+            }
+
+            for (int x = 0; x < line_len; x++)
+                samples[x] = tc->text_samples[line_start + x];
+
+            for (int x = 0; x < line_len / 2; x++)
+                tc->text_samples[line_start + x] = (((int)samples[(x * 2) + 0] + (int)samples[(x * 2) + 1])) / 2;
+
+            for (int x = line_len / 2; x < line_len; x++)
+                tc->text_samples[line_start + x] = tc->black_level;
+
+            free(samples);
+        }
+    }
+#else
     fir_int16_t fir;
 
     fir_int16_resampler_init(&fir, (r64_t) { tc->params->sample_rate, 1 }, (r64_t) { PM8546_SAMPLE_RATE, 1 });
@@ -460,6 +503,7 @@ static int _testcard_pm8546_text_downsample(testcard_t* tc)
             free(downsamples);
         }
     }
+#endif
 
     return(VID_OK);
 }
@@ -528,7 +572,7 @@ int _testcard_pm8546_text_init(testcard_t* tc)
     free(buf); /* Free contents of PROM. No longer needed. */
 
     /* Init filter */
-    _testcard_pm8546_skey_filter_init(&skey);
+    _testcard_pm8546_skey_filter_init(&skey, tc->black_level);
 
     if (r != VID_OK)
         return (r);
@@ -570,7 +614,7 @@ int testcard_open(vid_t *s)
         return(r);
     }
 
-    r = _testcard_configure(tc, s->conf.testcard_philips_type, s->conf.colour_mode);
+    r = _testcard_configure(tc, s);
 
     if(r != VID_OK)
     {
@@ -711,6 +755,13 @@ static void _testcard_write_text(testcard_t* tc, const testcard_text_boundaries_
 
         blks_rendered += blk->len;
     }
+
+    // int linef_start = ((0 + box->first_line) * tc->params->samples_per_line);
+    // for (x = 0; x < box->width; x++)
+	// 	printf("%d %d\n", tc->text_samples[linef_start + x], tc->black_level);
+	// exit(0);
+        
+
 }
 
 static void _testcard_text_process(testcard_t* tc)
@@ -726,16 +777,24 @@ static void _testcard_text_process(testcard_t* tc)
     strftime(time_buf, sizeof(time_buf), "%H:%M:%S", info);
     strftime(date_buf, sizeof(time_buf), "%d-%m-%y", info);
 
-    _testcard_set_box(tc, tc->params->text1, tc->black_level);
-    _testcard_set_box(tc, tc->params->text2, tc->black_level);
     _testcard_set_box(tc, tc->params->date, tc->black_level);
     _testcard_set_box(tc, tc->params->time, tc->black_level);
 
     _testcard_philips_clock_cutout(tc, tc->params->date);
     _testcard_philips_clock_cutout(tc, tc->params->time);
 
-    _testcard_write_text(tc, tc->params->text1, "HackTV");
-    _testcard_write_text(tc, tc->params->text2, "PM5644 EMU");
+	if (tc->conf.text1[0])
+	{
+    	_testcard_set_box(tc, tc->params->text1, tc->black_level);
+    	_testcard_write_text(tc, tc->params->text1, tc->conf.text1);
+	}
+
+	if (tc->conf.text2[0])
+	{
+	    _testcard_set_box(tc, tc->params->text2, tc->black_level);
+    	_testcard_write_text(tc, tc->params->text2, tc->conf.text2);
+	}
+
     _testcard_write_text(tc, tc->params->time, time_buf);
     _testcard_write_text(tc, tc->params->date, date_buf);
 }

@@ -378,6 +378,8 @@ enum {
 	_OPT_INVERT_VIDEO,
 	_OPT_RAW_BB_FILE,
 	_OPT_TESTCARD,
+	_OPT_TEXT1,
+	_OPT_TEXT2,
 	_OPT_RAW_BB_BLANKING,
 	_OPT_RAW_BB_WHITE,
 	_OPT_SECAM_FIELD_ID,
@@ -455,6 +457,8 @@ int main(int argc, char *argv[])
 		{ "invert-video",   no_argument,       0, _OPT_INVERT_VIDEO },
 		{ "raw-bb-file",    required_argument, 0, _OPT_RAW_BB_FILE },
 		{ "testcard",       required_argument, 0, _OPT_TESTCARD },
+		{ "text1",          required_argument, 0, _OPT_TEXT1 },
+		{ "text2",          required_argument, 0, _OPT_TEXT2 },
 		{ "raw-bb-blanking", required_argument, 0, _OPT_RAW_BB_BLANKING },
 		{ "raw-bb-white",   required_argument, 0, _OPT_RAW_BB_WHITE },
 		{ "secam-field-id", no_argument,       0, _OPT_SECAM_FIELD_ID },
@@ -833,6 +837,16 @@ int main(int argc, char *argv[])
 				break;
 			}
 
+		case _OPT_TEXT1:
+			strncpy(s.testcard_text1, optarg, sizeof(s.testcard_text1) - 1);
+			s.testcard_text1[sizeof(s.testcard_text1) - 1] = 0;
+			break;
+
+		case _OPT_TEXT2:
+			strncpy(s.testcard_text2, optarg, sizeof(s.testcard_text2) - 1);
+			s.testcard_text2[sizeof(s.testcard_text2) - 1] = 0;
+			break;
+
 		case _OPT_RAW_BB_BLANKING: /* --raw-bb-blanking <value> */
 			s.raw_bb_blanking_level = strtol(optarg, NULL, 0);
 			break;
@@ -1207,9 +1221,12 @@ int main(int argc, char *argv[])
 	vid_conf.raw_bb_file = s.raw_bb_file;
 	vid_conf.raw_bb_blanking_level = s.raw_bb_blanking_level;
 	vid_conf.raw_bb_white_level = s.raw_bb_white_level;
-	vid_conf.testcard_philips_type = s.testcard_philips_type;
 	vid_conf.secam_field_id = s.secam_field_id;
 	vid_conf.secam_field_id_lines = s.secam_field_id_lines;
+
+	vid_conf.testcard_philips_type = s.testcard_philips_type;
+	strcpy(vid_conf.testcard_text1, s.testcard_text1);
+	strcpy(vid_conf.testcard_text2, s.testcard_text2);
 	
 	/* Setup video encoder */
 	r = vid_init(&s.vid, s.samplerate, s.pixelrate, &vid_conf);

@@ -87,6 +87,8 @@ typedef struct {
 	int16_t raw_bb_blanking_level;
 	int16_t raw_bb_white_level;
 	testcard_type_t testcard_philips_type;
+	char testcard_text1[128];
+	char testcard_text2[128];
 	int secam_field_id;
 	int secam_field_id_lines;
 	int list_modes;
