@@ -229,101 +229,6 @@ pm8546_promblock_t _char_blocks[] = {
 	{ 2, 0x73 },  // 'z'
 };
 
-testcard_type_t testcard_type(const char *s)
-{
-	if (!strcmp(s, "philips4x3"))
-		return TESTCARD_PHILIPS_4X3;
-	if (!strcmp(s, "philips16x9"))
-		return TESTCARD_PHILIPS_16X9;
-
-	return -1;
-}
-
-static int _testcard_configure(testcard_t* state, vid_t *vid)
-{
-	const testcard_params_t *params = NULL;
-
-	switch (vid->conf.testcard_philips_type)
-	{
-		case TESTCARD_PHILIPS_4X3:
-			if (vid->conf.colour_mode == VID_PAL)
-				params = &philips4x3_pal;
-			if (vid->conf.colour_mode == VID_NTSC)
-				params = &philips4x3_ntsc;
-			break;
-		default:
-			break;
-	}
-
-	if (!params)
-	{
-		fprintf(stderr, "testcard: No testcard for this mode\n");
-		return(VID_ERROR);
-	}
-
-	if (params->sample_rate != vid->pixel_rate)
-	{
-		fprintf(stderr, "testcard: pixel rate must be set to %lu\n", params->sample_rate);
-		return(VID_ERROR);
-	}
-
-	strcpy(state->conf.text1, vid->conf.testcard_text1);
-	strcpy(state->conf.text2, vid->conf.testcard_text2);
-
-	state->params = params;
-	
-	return (VID_OK);
-}
-
-static int _testcard_load(testcard_t* tc)
-{
-	int16_t* buf;
-	int file_len;
-
-	FILE *f = fopen(tc->params->file_name, "rb");
-
-	if (!f)
-	{
-		perror("fopen");
-		return(VID_ERROR);
-	}
-
-	fseek(f, 0, SEEK_END);
-	file_len = ftell(f);
-	fseek(f, 0, SEEK_SET);
-
-	buf = malloc(file_len);
-
-	if (!buf)
-	{
-		perror("malloc");
-		return(VID_OUT_OF_MEMORY);
-	}
-
-	if (fread(buf, 1, file_len, f) != file_len)
-	{
-		fclose(f);
-		free(buf);
-		return(VID_ERROR);
-	}
-
-	fclose(f);
-
-	tc->nsamples = file_len / sizeof(*buf);
-	tc->samples = malloc(tc->nsamples * sizeof(*buf));
-	tc->pos = 0;
-
-	/* Scale from Philips to hacktv voltages */
-	for(int i = 0; i < tc->nsamples; i++)
-	{
-		tc->samples[i] = tc->blanking_level + (((int) buf[i] - tc->params->src_blanking_level) *
-			(tc->white_level - tc->blanking_level) / (tc->params->src_white_level - tc->params->src_blanking_level));
-	}
-
-	free(buf);
-	return(VID_OK);
-}
-
 static int _testcard_pm8546_skey_filter_init(pm8546_skey_filter_t* filter, int16_t black_level)
 {
 	double text_rise_time = 150E-9; // Text rise time
@@ -410,7 +315,7 @@ static void _testcard_pm8546_text_unfold(testcard_t* tc, uint8_t* rom)
 	/* Unfold */
 	for (int i = 0; i < sizeof(_char_blocks) / sizeof(pm8546_promblock_t); i++)
 	{
-		int blk_start = (_char_blocks[i].addr * PM8546_BLOCK_MIN * PM8546_BLOCK_HEIGHT * PM8546_BLOCK_FOLD);
+		int blk_start = (_char_blocks[i].addr * PM8546_BLOCK_STEP * PM8546_BLOCK_HEIGHT);
 
 		for (y = 0; y < PM8546_BLOCK_HEIGHT; y++)
 		{
@@ -438,11 +343,11 @@ static int _testcard_pm8546_text_calculate_flanks(testcard_t* tc, pm8546_skey_fi
 
 	for (i = 0; i < sizeof(_char_blocks) / sizeof(pm8546_promblock_t); i++)
 	{
-		int blk_start = (_char_blocks[i].addr * PM8546_BLOCK_MIN * PM8546_BLOCK_HEIGHT * PM8546_BLOCK_FOLD);
+		int blk_start = (_char_blocks[i].addr * PM8546_BLOCK_STEP * PM8546_BLOCK_HEIGHT);
 
 		for (y = 0; y < PM8546_BLOCK_HEIGHT; y++)
 		{
-			int line_len = _char_blocks[i].len * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD;
+			int line_len = _char_blocks[i].len * PM8546_BLOCK_STEP;
 			int line_start = blk_start + (y * line_len);
 
 			if (tc->text_samples[line_start] != tc->black_level)
@@ -469,11 +374,11 @@ static int _testcard_pm8546_text_downsample(testcard_t* tc)
 
 	for (i = 0; i < sizeof(_char_blocks) / sizeof(pm8546_promblock_t); i++)
 	{
-		int blk_start = (_char_blocks[i].addr * PM8546_BLOCK_MIN * PM8546_BLOCK_HEIGHT * PM8546_BLOCK_FOLD);
+		int blk_start = (_char_blocks[i].addr * PM8546_BLOCK_STEP * PM8546_BLOCK_HEIGHT);
 
 		for (y = 0; y < PM8546_BLOCK_HEIGHT; y++)
 		{
-			int line_len = _char_blocks[i].len * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD;
+			int line_len = _char_blocks[i].len * PM8546_BLOCK_STEP;
 			int line_start = blk_start + (y * line_len);
 			int16_t *samples = (int16_t *)calloc(line_len * 3, sizeof(int16_t));
 
@@ -521,149 +426,6 @@ static int _testcard_pm8546_text_downsample(testcard_t* tc)
 	}
 
 	return(VID_OK);
-}
-
-static int _testcard_pm8546_rom_load(testcard_t* tc, uint8_t** buf)
-{
-	int file_len;
-
-	FILE* f = fopen("pm8546a.bin", "rb");
-
-	if (!f)
-	{
-		perror("fopen");
-		return(VID_ERROR);
-	}
-
-	fseek(f, 0, SEEK_END);
-	file_len = ftell(f);
-	fseek(f, 0, SEEK_SET);
-
-	if (file_len != 0x10000)
-	{
-		fprintf(stderr, "testcard: PM8546 character set PROM size incorrect\n");
-		fclose(f);
-		return(VID_ERROR);
-	}
-
-	*buf = (uint8_t*)malloc(file_len);
-
-	if (!*buf)
-	{
-		perror("malloc");
-		fclose(f);
-		return(VID_OUT_OF_MEMORY);
-	}
-
-	if (fread(*buf, 1, file_len, f) != file_len)
-	{
-		fclose(f);
-		free(*buf);
-		return(VID_ERROR);
-	}
-
-	fclose(f);
-
-	return(VID_OK);
-}
-
-int _testcard_pm8546_text_init(testcard_t* tc)
-{
-	int r = VID_OK;
-	uint8_t* buf;
-	pm8546_skey_filter_t skey;
-
-	/* Read in character PROM from disk */
-	r = _testcard_pm8546_rom_load(tc, &buf);
-	
-	if (r != VID_OK)
-		return (r);
-
-	/* Unfold. After we this we have an aliased raster at hacktv's internal voltages.
-	 * Completely unusable but a starting point at least.
-	 */
-	_testcard_pm8546_text_unfold(tc, buf);
-
-	free(buf); /* Free contents of PROM. No longer needed. */
-
-	/* Init filter */
-	_testcard_pm8546_skey_filter_init(&skey, tc->black_level);
-
-	if (r != VID_OK)
-		return (r);
-
-	/* For correct appearance of text it is important that the PM8546's sallen-key filters are correctly emulated.
-	 * After this process is completed we have an accurate reconstruction of the Y signal which normally passes
-	 * from the PM8546 to the base generator, once again still at hacktv's internal voltage levels.
-	 */
-	r = _testcard_pm8546_text_calculate_flanks(tc, &skey);
-
-	if (r != VID_OK)
-		return (r);
-
-	free(skey.taps);
-
-	/* If only we were finished at this point. The PM8546 doesn't have the same sample rate as the base unit.
-	 * Not a problem on the real thing because text mixing is analogue.
-	 * But we're digital here so it's a problem.
-	 */
-	r = _testcard_pm8546_text_downsample(tc);
-
-	if (r != VID_OK)
-		return (r);
-
-	return (r);
-}
-
-int testcard_open(vid_t *s)
-{
-	testcard_t *tc = calloc(1, sizeof(testcard_t));
-	int r = VID_OK;
-
-	tc->blanking_level = s->blanking_level;
-	tc->black_level = s->black_level;
-	tc->white_level = s->white_level;
-
-	if(!tc)
-	{
-		r = VID_OUT_OF_MEMORY;
-		return(r);
-	}
-
-	r = _testcard_configure(tc, s);
-
-	if(r != VID_OK)
-	{
-		free(tc);
-		return(r);
-	}
-
-	r = _testcard_load(tc);
-	
-	if(r != VID_OK)
-	{
-		free(tc);
-		return(r);
-	}
-
-	r = _testcard_pm8546_text_init(tc);
-	
-	if(r != VID_OK)
-	{
-		free(tc);
-		return(r);
-	}
-
-#if 0
-	// Dump text samples for analysis
-	FILE* f = fopen("test_out.bin", "wb");
-	fwrite((void *)tc->text_samples, sizeof(int16_t), tc->ntext_samples, f);
-	fclose(f);
-#endif
-
-	s->testcard_philips = tc;
-
-	return(r);
 }
 
 static void _testcard_set_box(testcard_t* tc, const testcard_text_boundaries_t* box, int level)
@@ -840,4 +602,242 @@ int testcard_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		l->output[x * 2 + 1] = 0;
 	
 	return(1);
+}
+
+static int _testcard_configure(testcard_t* state, vid_t *vid)
+{
+	const testcard_params_t *params = NULL;
+
+	switch (vid->conf.testcard_philips_type)
+	{
+		case TESTCARD_PHILIPS_4X3:
+			if (vid->conf.colour_mode == VID_PAL)
+				params = &philips4x3_pal;
+			if (vid->conf.colour_mode == VID_NTSC)
+				params = &philips4x3_ntsc;
+			break;
+		default:
+			break;
+	}
+
+	if (!params)
+	{
+		fprintf(stderr, "testcard: No testcard for this mode\n");
+		return(VID_ERROR);
+	}
+
+	if (params->sample_rate != vid->pixel_rate)
+	{
+		fprintf(stderr, "testcard: pixel rate must be set to %lu\n", params->sample_rate);
+		return(VID_ERROR);
+	}
+
+	strcpy(state->conf.text1, vid->conf.testcard_text1);
+	strcpy(state->conf.text2, vid->conf.testcard_text2);
+
+	state->params = params;
+	
+	return (VID_OK);
+}
+
+static int _testcard_load(testcard_t* tc)
+{
+	int16_t* buf;
+	int file_len;
+
+	FILE *f = fopen(tc->params->file_name, "rb");
+
+	if (!f)
+	{
+		perror("fopen");
+		return(VID_ERROR);
+	}
+
+	fseek(f, 0, SEEK_END);
+	file_len = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	buf = malloc(file_len);
+
+	if (!buf)
+	{
+		perror("malloc");
+		return(VID_OUT_OF_MEMORY);
+	}
+
+	if (fread(buf, 1, file_len, f) != file_len)
+	{
+		fclose(f);
+		free(buf);
+		return(VID_ERROR);
+	}
+
+	fclose(f);
+
+	tc->nsamples = file_len / sizeof(*buf);
+	tc->samples = malloc(tc->nsamples * sizeof(*buf));
+	tc->pos = 0;
+
+	/* Scale from Philips to hacktv voltages */
+	for(int i = 0; i < tc->nsamples; i++)
+	{
+		tc->samples[i] = tc->blanking_level + (((int) buf[i] - tc->params->src_blanking_level) *
+			(tc->white_level - tc->blanking_level) / (tc->params->src_white_level - tc->params->src_blanking_level));
+	}
+
+	free(buf);
+	return(VID_OK);
+}
+
+static int _testcard_pm8546_rom_load(testcard_t* tc, uint8_t** buf)
+{
+	int file_len;
+
+	FILE* f = fopen("pm8546a.bin", "rb");
+
+	if (!f)
+	{
+		perror("fopen");
+		return(VID_ERROR);
+	}
+
+	fseek(f, 0, SEEK_END);
+	file_len = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	if (file_len != 0x10000)
+	{
+		fprintf(stderr, "testcard: PM8546 character set PROM size incorrect\n");
+		fclose(f);
+		return(VID_ERROR);
+	}
+
+	*buf = (uint8_t*)malloc(file_len);
+
+	if (!*buf)
+	{
+		perror("malloc");
+		fclose(f);
+		return(VID_OUT_OF_MEMORY);
+	}
+
+	if (fread(*buf, 1, file_len, f) != file_len)
+	{
+		fclose(f);
+		free(*buf);
+		return(VID_ERROR);
+	}
+
+	fclose(f);
+
+	return(VID_OK);
+}
+
+int _testcard_pm8546_text_init(testcard_t* tc)
+{
+	int r = VID_OK;
+	uint8_t* buf;
+	pm8546_skey_filter_t skey;
+
+	/* Read in character PROM from disk */
+	r = _testcard_pm8546_rom_load(tc, &buf);
+	
+	if (r != VID_OK)
+		return (r);
+
+	/* Unfold. After we this we have an aliased raster at hacktv's internal voltages.
+	 * Completely unusable but a starting point at least.
+	 */
+	_testcard_pm8546_text_unfold(tc, buf);
+
+	free(buf); /* Free contents of PROM. No longer needed. */
+
+	/* Init filter */
+	_testcard_pm8546_skey_filter_init(&skey, tc->black_level);
+
+	if (r != VID_OK)
+		return (r);
+
+	/* For correct appearance of text it is important that the PM8546's sallen-key filters are correctly emulated.
+	 * After this process is completed we have an accurate reconstruction of the Y signal which normally passes
+	 * from the PM8546 to the base generator, once again still at hacktv's internal voltage levels.
+	 */
+	r = _testcard_pm8546_text_calculate_flanks(tc, &skey);
+
+	if (r != VID_OK)
+		return (r);
+
+	free(skey.taps);
+
+	/* If only we were finished at this point. The PM8546 doesn't have the same sample rate as the base unit.
+	 * Not a problem on the real thing because text mixing is analogue.
+	 * But we're digital here so it's a problem.
+	 */
+	r = _testcard_pm8546_text_downsample(tc);
+
+	if (r != VID_OK)
+		return (r);
+
+	return (r);
+}
+
+int testcard_open(vid_t *s)
+{
+	testcard_t *tc = calloc(1, sizeof(testcard_t));
+	int r = VID_OK;
+
+	tc->blanking_level = s->blanking_level;
+	tc->black_level = s->black_level;
+	tc->white_level = s->white_level;
+
+	if(!tc)
+	{
+		r = VID_OUT_OF_MEMORY;
+		return(r);
+	}
+
+	r = _testcard_configure(tc, s);
+
+	if(r != VID_OK)
+	{
+		free(tc);
+		return(r);
+	}
+
+	r = _testcard_load(tc);
+	
+	if(r != VID_OK)
+	{
+		free(tc);
+		return(r);
+	}
+
+	r = _testcard_pm8546_text_init(tc);
+	
+	if(r != VID_OK)
+	{
+		free(tc);
+		return(r);
+	}
+
+#if 0
+	// Dump text samples for analysis
+	FILE* f = fopen("test_out.bin", "wb");
+	fwrite((void *)tc->text_samples, sizeof(int16_t), tc->ntext_samples, f);
+	fclose(f);
+#endif
+
+	s->testcard_philips = tc;
+
+	return(r);
+}
+
+testcard_type_t testcard_type(const char *s)
+{
+	if (!strcmp(s, "philips4x3"))
+		return TESTCARD_PHILIPS_4X3;
+	if (!strcmp(s, "philips16x9"))
+		return TESTCARD_PHILIPS_16X9;
+
+	return -1;
 }
