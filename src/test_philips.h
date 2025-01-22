@@ -49,10 +49,11 @@ typedef struct
 	int samples_per_line;
 	int num_fields;
 	int is_16x9;
+	int cut_clock;
 	const testcard_text_boundaries_t* text1;
 	const testcard_text_boundaries_t* text2;
-	const testcard_text_boundaries_t* date;
 	const testcard_text_boundaries_t* time;
+	const testcard_text_boundaries_t* date;
 } testcard_params_t;
 
 typedef struct {
@@ -73,6 +74,10 @@ typedef struct {
 	int pos;
 	testcard_conf_t conf;
 	const testcard_params_t* params;
+	int16_t* text1_orig;
+	int16_t* text2_orig;
+	int16_t* time_orig;
+	int16_t* date_orig;
 } testcard_t;
 
 extern testcard_type_t testcard_type(const char *s);

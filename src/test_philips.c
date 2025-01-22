@@ -52,14 +52,14 @@ typedef struct {
 const testcard_text_boundaries_t philips4x3_pal_topbox = {
 	.first_line = 50,
 	.first_sample = 419,
-	.height = PM8546_BLOCK_HEIGHT,
+	.height = 42,
 	.width = 147
 };
 
 const testcard_text_boundaries_t philips4x3_pal_bottombox = {
 	.first_line = 239,
 	.first_sample = 381,
-	.height = PM8546_BLOCK_HEIGHT,
+	.height = 42,
 	.width = 223
 };
 
@@ -113,6 +113,55 @@ const testcard_params_t philips4x3_pal = {
 	.samples_per_line = 864,
 	.num_fields = 8,
 	.is_16x9 = 0,
+	.cut_clock = 1,
+	.sample_rate = 13500000,
+	.text1 = &philips4x3_pal_topbox,
+	.text2 = &philips4x3_pal_bottombox,
+	.date = &philips4x3_pal_date,
+	.time = &philips4x3_pal_time
+};
+
+const testcard_params_t philips4x3_secam = {
+	.file_name = "philips_4x3_secam.bin",
+	.src_blanking_level = 0x30e,
+	.src_white_level = 0xde,
+	.num_lines = 625,
+	.samples_per_line = 864,
+	.num_fields = 4,
+	.is_16x9 = 0,
+	.cut_clock = 0,
+	.sample_rate = 13500000,
+	.text1 = &philips4x3_pal_topbox,
+	.text2 = &philips4x3_pal_bottombox,
+	.date = &philips4x3_pal_date,
+	.time = &philips4x3_pal_time
+};
+
+const testcard_params_t philips4x3_secam_time = {
+	.file_name = "philips_4x3_secam_time.bin",
+	.src_blanking_level = 0x30e,
+	.src_white_level = 0xde,
+	.num_lines = 625,
+	.samples_per_line = 864,
+	.num_fields = 4,
+	.is_16x9 = 0,
+	.cut_clock = 0,
+	.sample_rate = 13500000,
+	.text1 = &philips4x3_pal_topbox,
+	.text2 = &philips4x3_pal_bottombox,
+	.date = &philips4x3_pal_date,
+	.time = &philips4x3_pal_time
+};
+
+const testcard_params_t philips4x3_secam_date_time = {
+	.file_name = "philips_4x3_secam_date_time.bin",
+	.src_blanking_level = 0x30e,
+	.src_white_level = 0xde,
+	.num_lines = 625,
+	.samples_per_line = 864,
+	.num_fields = 4,
+	.is_16x9 = 0,
+	.cut_clock = 0,
 	.sample_rate = 13500000,
 	.text1 = &philips4x3_pal_topbox,
 	.text2 = &philips4x3_pal_bottombox,
@@ -128,6 +177,7 @@ const testcard_params_t philips4x3_ntsc = {
 	.samples_per_line = 858,
 	.num_fields = 4,
 	.is_16x9 = 0,
+	.cut_clock = 1,
 	.sample_rate = 13500000,
 	.text1 = &philips4x3_ntsc_topbox,
 	.text2 = &philips4x3_ntsc_bottombox,
@@ -428,13 +478,22 @@ static int _testcard_pm8546_text_downsample(testcard_t* tc)
 	return(VID_OK);
 }
 
-static void _testcard_set_box(testcard_t* tc, const testcard_text_boundaries_t* box, int level)
+static int _testcard_clone_box(testcard_t* tc, const testcard_text_boundaries_t* box, int16_t **orig_r)
 {
 	int f, y, x;
-	
+
+	int16_t* orig = calloc(sizeof(int16_t), box->width * box->height * (tc->params->num_fields / 2));
+
+	if (!orig)
+	{
+		perror("malloc");
+		return(VID_OUT_OF_MEMORY);
+	}
+
 	for (f = 0; f < tc->params->num_fields / 2; f++)
 	{
 		int frame_start = (f * tc->params->samples_per_line * tc->params->num_lines);
+		int box_start = ((f * box->width * box->height));
 
 		for (y = 0; y < box->height / 2; y++)
 		{
@@ -443,9 +502,39 @@ static void _testcard_set_box(testcard_t* tc, const testcard_text_boundaries_t* 
 
 			for (x = 0; x < box->width; x++)
 			{
-				tc->samples[linef1_start + box->first_sample + x] = level;
-				tc->samples[linef2_start + box->first_sample + x] = level;
+				orig[box_start + (((y * 2) + 0) * box->width) + x] = tc->samples[linef1_start + box->first_sample + x];
+				orig[box_start + (((y * 2) + 1) * box->width) + x] = tc->samples[linef2_start + box->first_sample + x];
+
 			}
+
+		}
+	}
+
+	*orig_r = orig;
+
+	return(VID_OK);
+}
+
+static void _testcard_restore_box(testcard_t* tc, const testcard_text_boundaries_t* box, int16_t* orig, int level)
+{
+	int f, y, x;
+	
+	for (f = 0; f < tc->params->num_fields / 2; f++)
+	{
+		int frame_start = (f * tc->params->samples_per_line * tc->params->num_lines);
+		int box_start = ((f * box->width * box->height));
+
+		for (y = 0; y < box->height / 2; y++)
+		{
+			int linef1_start = frame_start + ((y + box->first_line) * tc->params->samples_per_line);
+			int linef2_start = frame_start + ((y + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) + box->first_line) * tc->params->samples_per_line);
+
+			for (x = 0; x < box->width; x++)
+			{
+				tc->samples[linef1_start + box->first_sample + x] = orig != NULL ? orig[box_start + (((y * 2) + 0) * box->width) + x] : level;
+				tc->samples[linef2_start + box->first_sample + x] = orig != NULL ? orig[box_start + (((y * 2) + 1) * box->width) + x] : level;
+			}
+
 		}
 	}
 }
@@ -530,8 +619,8 @@ static void _testcard_write_text(testcard_t* tc, const testcard_text_boundaries_
 
 				for (x = 0; x < char_width_in_memory / PM8546_SAMPLE_RATIO; x++)
 				{
-					tc->samples[linef1_start + box->first_sample + indent + x] = tc->text_samples[(tc->params->num_lines == 625 ? textf1_start : textf2_start) + x];
-					tc->samples[linef2_start + box->first_sample + indent + x] = tc->text_samples[(tc->params->num_lines == 625 ? textf2_start : textf1_start) + x];
+					tc->samples[linef1_start + box->first_sample + indent + x] += (tc->text_samples[(tc->params->num_lines == 625 ? textf1_start : textf2_start) + x] - tc->black_level);
+					tc->samples[linef2_start + box->first_sample + indent + x] += (tc->text_samples[(tc->params->num_lines == 625 ? textf2_start : textf1_start) + x] - tc->black_level);
 				}
 			}
 		}
@@ -555,25 +644,25 @@ static void _testcard_text_process(testcard_t* tc)
 
 	if (tc->conf.text1[0])
 	{
-		_testcard_set_box(tc, tc->params->text1, tc->black_level);
+		_testcard_restore_box(tc, tc->params->text1, tc->text1_orig, 0);
 		_testcard_write_text(tc, tc->params->text1, tc->conf.text1);
 	}
 
 	if (tc->conf.text2[0])
 	{
-		_testcard_set_box(tc, tc->params->text2, tc->black_level);
+		_testcard_restore_box(tc, tc->params->text2, tc->text2_orig, 0);
 	 	_testcard_write_text(tc, tc->params->text2, tc->conf.text2);
 	}
 
 	if (tc->conf.clock_mode == TESTCARD_CLOCK_TIME || tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME)
 	{
-		_testcard_set_box(tc, tc->params->time, tc->black_level);
+		_testcard_restore_box(tc, tc->params->time, tc->time_orig, 0);
 		_testcard_write_text(tc, tc->params->time, time_buf);
 	}
 
 	if (tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME)
 	{
-		_testcard_set_box(tc, tc->params->date, tc->black_level);
+		_testcard_restore_box(tc, tc->params->date, tc->date_orig, 0);
 		_testcard_write_text(tc, tc->params->date, date_buf);
 	}
 }
@@ -583,17 +672,17 @@ int testcard_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	vid_line_t *l = lines[0];
 	int x;
 	
-	l->width	 = s->width;
-	l->frame	 = s->bframe;
-	l->line	  = s->bline;
-	l->vbialloc  = 0;
-	l->lut	   = NULL;
-	l->audio	 = NULL;
+	l->width = s->width;
+	l->frame = s->bframe;
+	l->line = s->bline;
+	l->vbialloc = 0;
+	l->lut = NULL;
+	l->audio = NULL;
 	l->audio_len = 0;
 
 	/* On the real PM8546 we sweat over every CPU cycle, but in hacktv we have CPU time to burn. Do all of the text processing in one go */
 	 if (!s->testcard_philips->pos)
-	 	_testcard_text_process(s->testcard_philips);
+	  	_testcard_text_process(s->testcard_philips);
 	
 	/* Copy samples into I channel */
 	for(x = 0; x < l->width; x++)
@@ -620,6 +709,21 @@ static int _testcard_configure(testcard_t* state, vid_t *vid)
 				params = &philips4x3_pal;
 			if (vid->conf.colour_mode == VID_NTSC)
 				params = &philips4x3_ntsc;
+			if (vid->conf.colour_mode == VID_SECAM)
+			{
+				switch (vid->conf.testcard_clock_mode)
+				{
+					case TESTCARD_CLOCK_OFF:
+						params = &philips4x3_secam;
+						break;
+					case TESTCARD_CLOCK_TIME:
+						params = &philips4x3_secam_time;
+						break;
+					case TESTCARD_CLOCK_DATE_TIME:
+						params = &philips4x3_secam_date_time;
+						break;
+				}
+			}
 			break;
 		default:
 			break;
@@ -786,6 +890,23 @@ int _testcard_pm8546_text_init(testcard_t* tc)
 	return (r);
 }
 
+void testcard_free(testcard_t *tc)
+{
+	if (tc->text1_orig)
+		free(tc->text1_orig);
+
+	if (tc->text2_orig)
+		free(tc->text2_orig);
+
+	if (tc->time_orig)
+		free(tc->time_orig);
+
+	if (tc->date_orig)
+		free(tc->date_orig);
+
+	free(tc);
+}
+
 int testcard_open(vid_t *s)
 {
 	testcard_t *tc = calloc(1, sizeof(testcard_t));
@@ -805,7 +926,7 @@ int testcard_open(vid_t *s)
 
 	if(r != VID_OK)
 	{
-		free(tc);
+		testcard_free(tc);
 		return(r);
 	}
 
@@ -813,27 +934,59 @@ int testcard_open(vid_t *s)
 	
 	if(r != VID_OK)
 	{
-		free(tc);
+		testcard_free(tc);
 		return(r);
 	}
 
-	if (tc->conf.clock_mode == TESTCARD_CLOCK_TIME || tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME)
+	if ((tc->conf.clock_mode == TESTCARD_CLOCK_TIME || tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME) && tc->params->cut_clock)
 	{
-		_testcard_set_box(tc, tc->params->time, tc->black_level);
+		_testcard_restore_box(tc, tc->params->time, NULL, tc->black_level);
 		_testcard_philips_clock_cutout(tc, tc->params->time);
 	}
 
-	if (tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME)
+	if (tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME && tc->params->cut_clock)
 	{
-		_testcard_set_box(tc, tc->params->date, tc->black_level);
+		_testcard_restore_box(tc, tc->params->date, NULL, tc->black_level);
 		_testcard_philips_clock_cutout(tc, tc->params->date);
+	}
+
+	r = _testcard_clone_box(tc, tc->params->text1, &tc->text1_orig);
+
+	if(r != VID_OK)
+	{
+		testcard_free(tc);
+		return(r);
+	}
+
+	r = _testcard_clone_box(tc, tc->params->text2, &tc->text2_orig);
+
+	if(r != VID_OK)
+	{
+		testcard_free(tc);
+		return(r);
+	}
+
+	r = _testcard_clone_box(tc, tc->params->time, &tc->time_orig);
+
+	if(r != VID_OK)
+	{
+		testcard_free(tc);
+		return(r);
+	}
+
+	r = _testcard_clone_box(tc, tc->params->date, &tc->date_orig);
+
+	if(r != VID_OK)
+	{
+		testcard_free(tc);
+		return(r);
 	}
 
 	r = _testcard_pm8546_text_init(tc);
 	
 	if(r != VID_OK)
 	{
-		free(tc);
+		testcard_free(tc);
 		return(r);
 	}
 
