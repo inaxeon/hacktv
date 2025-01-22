@@ -29,6 +29,8 @@
 
 #define PM8546_BLOCK_MIN		2
 #define PM8546_BLOCK_FOLD	   	8
+#define PM8546_BLOCK_STEP		(PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD)
+#define PM8546_SAMPLE_RATIO		2
 #define PM8546_BLOCK_HEIGHT	 	42
 #define PM8546_SAMPLE_RATE	  	27000000 /* Not always true, but true for what's been implemented so far */
 
@@ -134,97 +136,97 @@ const testcard_params_t philips4x3_ntsc = {
 };
 
 pm8546_promblock_t _char_blocks[] = {
-	{ 1, 0x3F },  // ' ': 8064
-	{ 1, 0x7F },  // '!': 16256
-	{ 0, 0x00 },  // NOT ALLOWED: '"'
-	{ 0, 0x00 },  // NOT ALLOWED: '#'
-	{ 0, 0x00 },  // NOT ALLOWED: '$'
-	{ 0, 0x00 },  // NOT ALLOWED: '%'
-	{ 2, 0x3C },  // '&': 7680
-	{ 1, 0x7E },  // ''': 16128
-	{ 1, 0xEC },  // '(': 30208
-	{ 1, 0xED },  // ')': 30336
-	{ 0, 0x00 },  // NOT ALLOWED: '*'
-	{ 2, 0x98 },  // '+': 19456
-	{ 1, 0x7D },  // ',': 16000
-	{ 2, 0x96 },  // '-': 19200
-	{ 1, 0x7C },  // '.': 15872
-	{ 2, 0x9C },  // '/': 19968
-	{ 2, 0x80 },  // '0': 16384
-	{ 2, 0x82 },  // '1': 16640
-	{ 2, 0x84 },  // '2': 16896
-	{ 2, 0x86 },  // '3': 17152
-	{ 2, 0x88 },  // '4': 17408
-	{ 2, 0x8A },  // '5': 17664
-	{ 2, 0x8C },  // '6': 17920
-	{ 2, 0x8E },  // '7': 18176
-	{ 2, 0x90 },  // '8': 18432
-	{ 2, 0x92 },  // '9': 18688
-	{ 2, 0x94 },  // ':': 18944
-	{ 0, 0x00 },  // NOT ALLOWED: ';'
-	{ 0, 0x00 },  // NOT ALLOWED: '<'
-	{ 2, 0x9A },  // '=': 19712
-	{ 0, 0x00 },  // NOT ALLOWED: '>'
-	{ 0, 0x00 },  // NOT ALLOWED: '?'
-	{ 0, 0x00 },  // NOT ALLOWED: '@'
-	{ 2, 0x00 },  // 'A': 0
-	{ 2, 0x02 },  // 'B': 256
-	{ 2, 0x04 },  // 'C': 512
-	{ 2, 0x06 },  // 'D': 768
-	{ 2, 0x08 },  // 'E': 1024
-	{ 2, 0x0A },  // 'F': 1280
-	{ 2, 0x0C },  // 'G': 1536
-	{ 2, 0x0E },  // 'H': 1792
-	{ 1, 0x10 },  // 'I': 2048
-	{ 2, 0x11 },  // 'J': 2176
-	{ 2, 0x13 },  // 'K': 2432
-	{ 2, 0x15 },  // 'L': 2688
-	{ 3, 0x17 },  // 'M': 2944
-	{ 2, 0x1A },  // 'N': 3328
-	{ 2, 0x1C },  // 'O': 3584
-	{ 2, 0x1E },  // 'P': 3840
-	{ 2, 0x20 },  // 'Q': 4096
-	{ 2, 0x22 },  // 'R': 4352
-	{ 2, 0x24 },  // 'S': 4608
-	{ 2, 0x26 },  // 'T': 4864
-	{ 2, 0x28 },  // 'U': 5120
-	{ 2, 0x2A },  // 'V': 5376
-	{ 3, 0x2C },  // 'W': 5632
-	{ 2, 0x2F },  // 'X': 6016
-	{ 2, 0x31 },  // 'Y': 6272
-	{ 2, 0x33 },  // 'Z': 6528
-	{ 0, 0x00 },  // NOT ALLOWED: '['
-	{ 0, 0x00 },  // NOT ALLOWED: '\'
-	{ 0, 0x00 },  // NOT ALLOWED: ']'
-	{ 0, 0x00 },  // NOT ALLOWED: '^'
-	{ 2, 0x9E },  // '_': 20224
-	{ 0, 0x00 },  // NOT ALLOWED: '`'
-	{ 2, 0x40 },  // 'a': 8192
-	{ 2, 0x42 },  // 'b': 8448
-	{ 2, 0x44 },  // 'c': 8704
-	{ 2, 0x46 },  // 'd': 8960
-	{ 2, 0x48 },  // 'e': 9216
-	{ 1, 0x4A },  // 'f': 9472
-	{ 2, 0x4B },  // 'g': 9600
-	{ 2, 0x4D },  // 'h': 9856
-	{ 1, 0x4F },  // 'i': 10112
-	{ 1, 0x50 },  // 'j': 10240
-	{ 2, 0x51 },  // 'k': 10368
-	{ 1, 0x53 },  // 'l': 10624
-	{ 3, 0x54 },  // 'm': 10752
-	{ 2, 0x57 },  // 'n': 11136
-	{ 2, 0x59 },  // 'o': 11392
-	{ 2, 0x5B },  // 'p': 11648
-	{ 2, 0x60 },  // 'q': 12288
-	{ 2, 0x62 },  // 'r': 12544
-	{ 2, 0x64 },  // 's': 12800
-	{ 2, 0x66 },  // 't': 13056
-	{ 2, 0x68 },  // 'u': 13312
-	{ 2, 0x6A },  // 'v': 13568
-	{ 3, 0x6C },  // 'w': 13824
-	{ 2, 0x6F },  // 'x': 14208
-	{ 2, 0x71 },  // 'y': 14464
-	{ 2, 0x73 },  // 'z': 14720
+	{ 1, 0x3F },  // ' '
+	{ 1, 0x7F },  // '!'
+	{ 0, 0x00 },  // '"' (NOT ALLOWED)
+	{ 0, 0x00 },  // '#' (NOT ALLOWED) 
+	{ 0, 0x00 },  // '$' (NOT ALLOWED) 
+	{ 0, 0x00 },  // '%' (NOT ALLOWED)
+	{ 2, 0x3C },  // '&'
+	{ 1, 0x7E },  // '''
+	{ 1, 0xEC },  // '('
+	{ 1, 0xED },  // ')'
+	{ 0, 0x00 },  // '*' (NOT ALLOWED)
+	{ 2, 0x98 },  // '+'
+	{ 1, 0x7D },  // ','
+	{ 2, 0x96 },  // '-'
+	{ 1, 0x7C },  // '.'
+	{ 2, 0x9C },  // '/'
+	{ 2, 0x80 },  // '0'
+	{ 2, 0x82 },  // '1'
+	{ 2, 0x84 },  // '2'
+	{ 2, 0x86 },  // '3'
+	{ 2, 0x88 },  // '4'
+	{ 2, 0x8A },  // '5'
+	{ 2, 0x8C },  // '6'
+	{ 2, 0x8E },  // '7'
+	{ 2, 0x90 },  // '8'
+	{ 2, 0x92 },  // '9'
+	{ 2, 0x94 },  // ':'
+	{ 0, 0x00 },  // ';' (NOT ALLOWED)
+	{ 0, 0x00 },  // '<' (NOT ALLOWED)
+	{ 2, 0x9A },  // '='
+	{ 0, 0x00 },  // '>' (NOT ALLOWED) 
+	{ 0, 0x00 },  // '?' (NOT ALLOWED) 
+	{ 0, 0x00 },  // '@' (NOT ALLOWED)
+	{ 2, 0x00 },  // 'A'
+	{ 2, 0x02 },  // 'B'
+	{ 2, 0x04 },  // 'C'
+	{ 2, 0x06 },  // 'D'
+	{ 2, 0x08 },  // 'E'
+	{ 2, 0x0A },  // 'F'
+	{ 2, 0x0C },  // 'G'
+	{ 2, 0x0E },  // 'H'
+	{ 1, 0x10 },  // 'I'
+	{ 2, 0x11 },  // 'J'
+	{ 2, 0x13 },  // 'K'
+	{ 2, 0x15 },  // 'L'
+	{ 3, 0x17 },  // 'M'
+	{ 2, 0x1A },  // 'N'
+	{ 2, 0x1C },  // 'O'
+	{ 2, 0x1E },  // 'P'
+	{ 2, 0x20 },  // 'Q'
+	{ 2, 0x22 },  // 'R'
+	{ 2, 0x24 },  // 'S'
+	{ 2, 0x26 },  // 'T'
+	{ 2, 0x28 },  // 'U'
+	{ 2, 0x2A },  // 'V'
+	{ 3, 0x2C },  // 'W'
+	{ 2, 0x2F },  // 'X'
+	{ 2, 0x31 },  // 'Y'
+	{ 2, 0x33 },  // 'Z'
+	{ 0, 0x00 },  // '[' (NOT ALLOWED)
+	{ 0, 0x00 },  // '\' (NOT ALLOWED)
+	{ 0, 0x00 },  // ']' (NOT ALLOWED)
+	{ 0, 0x00 },  // '^' (NOT ALLOWED)
+	{ 2, 0x9E },  // '_'
+	{ 0, 0x00 },  // '`' (NOT ALLOWED)
+	{ 2, 0x40 },  // 'a'
+	{ 2, 0x42 },  // 'b'
+	{ 2, 0x44 },  // 'c'
+	{ 2, 0x46 },  // 'd'
+	{ 2, 0x48 },  // 'e'
+	{ 1, 0x4A },  // 'f'
+	{ 2, 0x4B },  // 'g'
+	{ 2, 0x4D },  // 'h'
+	{ 1, 0x4F },  // 'i'
+	{ 1, 0x50 },  // 'j'
+	{ 2, 0x51 },  // 'k'
+	{ 1, 0x53 },  // 'l'
+	{ 3, 0x54 },  // 'm'
+	{ 2, 0x57 },  // 'n'
+	{ 2, 0x59 },  // 'o'
+	{ 2, 0x5B },  // 'p'
+	{ 2, 0x60 },  // 'q'
+	{ 2, 0x62 },  // 'r'
+	{ 2, 0x64 },  // 's'
+	{ 2, 0x66 },  // 't'
+	{ 2, 0x68 },  // 'u'
+	{ 2, 0x6A },  // 'v'
+	{ 3, 0x6C },  // 'w'
+	{ 2, 0x6F },  // 'x'
+	{ 2, 0x71 },  // 'y'
+	{ 2, 0x73 },  // 'z'
 };
 
 testcard_type_t testcard_type(const char *s)
@@ -734,22 +736,22 @@ static void _testcard_write_text(testcard_t* tc, const testcard_text_boundaries_
 	}
 
 	/* On the real PM8546 we get tied in knots trying to centre the text, but in hacktv everything's software so it's dead simple. */
-	indent = (box->width - (blks * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD / 2 /* Downsample ratio */)) / 2;
+	indent = (box->width - (blks * PM8546_BLOCK_STEP / PM8546_SAMPLE_RATIO)) / 2;
 
 	for (i = 0; i < txt_len; i++)
 	{
-		int text_sample_start, char_width_in_memory, char_width_on_screen, next_on_screen_start;
+		int text_sample_start, char_width_in_memory, next_on_screen_start, v_offset;
 		char c = text[i];
-		c -= ' ';
 		
+		c -= ' ';
 		if (c >= max_char)
 			continue;
 
 		blk = &_char_blocks[(int)c];
-		text_sample_start = blk->addr * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD * PM8546_BLOCK_HEIGHT;
-		char_width_in_memory = (blk->len * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD);
-		char_width_on_screen = (blk->len * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD) / 2 /* Downsample ratio */;
-		next_on_screen_start = (blks_rendered * PM8546_BLOCK_MIN * PM8546_BLOCK_FOLD / 2 /* Downsample ratio */);
+		text_sample_start = blk->addr * PM8546_BLOCK_STEP * PM8546_BLOCK_HEIGHT;
+		char_width_in_memory = (blk->len * PM8546_BLOCK_STEP);
+		next_on_screen_start = (blks_rendered * PM8546_BLOCK_STEP / PM8546_SAMPLE_RATIO);
+		v_offset = (PM8546_BLOCK_HEIGHT - box->height) / 2;
 
 		for (f = 0; f < tc->params->num_fields / 2; f++)
 		{
@@ -758,11 +760,11 @@ static void _testcard_write_text(testcard_t* tc, const testcard_text_boundaries_
 			for (y = 0; y < (box->height / 2); y++)
 			{
 				int linef1_start = frame_start + ((y + box->first_line) * tc->params->samples_per_line) + next_on_screen_start;
-				int linef2_start = frame_start + ((y + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) + box->first_line) * tc->params->samples_per_line) + next_on_screen_start;
-				int textf1_start = text_sample_start + (((y * 2) + 0 + ((PM8546_BLOCK_HEIGHT - box->height) / 2)) * char_width_in_memory);
-				int textf2_start = text_sample_start + (((y * 2) + 1 + ((PM8546_BLOCK_HEIGHT - box->height) / 2)) * char_width_in_memory);
+				int linef2_start = frame_start + ((y + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) + box->first_line)* tc->params->samples_per_line) + next_on_screen_start;
+				int textf1_start = text_sample_start + (((y * 2) + 0 + v_offset) * char_width_in_memory);
+				int textf2_start = text_sample_start + (((y * 2) + 1 + v_offset) * char_width_in_memory);
 
-				for (x = 0; x < char_width_on_screen; x++)
+				for (x = 0; x < char_width_in_memory / PM8546_SAMPLE_RATIO; x++)
 				{
 					tc->samples[linef1_start + box->first_sample + indent + x] = tc->text_samples[(tc->params->num_lines == 625 ? textf1_start : textf2_start) + x];
 					tc->samples[linef2_start + box->first_sample + indent + x] = tc->text_samples[(tc->params->num_lines == 625 ? textf2_start : textf1_start) + x];
