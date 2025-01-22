@@ -942,6 +942,12 @@ int testcard_open(vid_t *s)
 		return(r);
 	}
 
+	if (tc->params->cut_clock)
+	{
+		_testcard_restore_box(tc, tc->params->text1_box, NULL, tc->black_level);
+		_testcard_restore_box(tc, tc->params->text2_box, NULL, tc->black_level);
+	}
+
 	if ((tc->conf.clock_mode == TESTCARD_CLOCK_TIME || tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME) && tc->params->cut_clock)
 	{
 		_testcard_restore_box(tc, tc->params->time_box, NULL, tc->black_level);
