@@ -155,8 +155,9 @@ typedef struct {
 
 	/* Philips testcards */
 	testcard_type_t testcard_philips_type;
-	char testcard_text1[128];
-	char testcard_text2[128];
+	testcard_clock_mode_t testcard_clock_mode;
+	char testcard_text1[TESTCARD_MAX_TEXT];
+	char testcard_text2[TESTCARD_MAX_TEXT];
 	
 	/* Signal offset and passthru */
 	int64_t offset;

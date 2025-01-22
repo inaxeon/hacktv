@@ -309,7 +309,7 @@ static void _testcard_pm8546_text_unfold(testcard_t* tc, uint8_t* rom)
 			max_addr = _char_blocks[i].addr + _char_blocks[i].len;
 	}
 
-	tc->ntext_samples = max_addr * PM8546_BLOCK_MIN * PM8546_BLOCK_HEIGHT * 8;
+	tc->ntext_samples = max_addr * PM8546_BLOCK_STEP * PM8546_BLOCK_HEIGHT;
 	tc->text_samples = (int16_t*)calloc(1, tc->ntext_samples * sizeof(int16_t));
 
 	/* Unfold */
@@ -319,7 +319,7 @@ static void _testcard_pm8546_text_unfold(testcard_t* tc, uint8_t* rom)
 
 		for (y = 0; y < PM8546_BLOCK_HEIGHT; y++)
 		{
-			int line_start = blk_start + (y * (_char_blocks[i].len * PM8546_BLOCK_MIN * 8));
+			int line_start = blk_start + (y * (_char_blocks[i].len * PM8546_BLOCK_STEP));
 
 			for (x = 0; x < _char_blocks[i].len * PM8546_BLOCK_MIN; x++)
 			{
@@ -522,7 +522,9 @@ static void _testcard_write_text(testcard_t* tc, const testcard_text_boundaries_
 			for (y = 0; y < (box->height / 2); y++)
 			{
 				int linef1_start = frame_start + ((y + box->first_line) * tc->params->samples_per_line) + next_on_screen_start;
-				int linef2_start = frame_start + ((y + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) + box->first_line)* tc->params->samples_per_line) + next_on_screen_start;
+				int linef2_start = frame_start +
+					((y + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) + box->first_line) * tc->params->samples_per_line)
+					+ next_on_screen_start;
 				int textf1_start = text_sample_start + (((y * 2) + 0 + v_offset) * char_width_in_memory);
 				int textf2_start = text_sample_start + (((y * 2) + 1 + v_offset) * char_width_in_memory);
 
@@ -551,12 +553,6 @@ static void _testcard_text_process(testcard_t* tc)
 	strftime(time_buf, sizeof(time_buf), "%H:%M:%S", info);
 	strftime(date_buf, sizeof(time_buf), "%d-%m-%y", info);
 
-	_testcard_set_box(tc, tc->params->date, tc->black_level);
-	_testcard_set_box(tc, tc->params->time, tc->black_level);
-
-	_testcard_philips_clock_cutout(tc, tc->params->date);
-	_testcard_philips_clock_cutout(tc, tc->params->time);
-
 	if (tc->conf.text1[0])
 	{
 		_testcard_set_box(tc, tc->params->text1, tc->black_level);
@@ -569,8 +565,17 @@ static void _testcard_text_process(testcard_t* tc)
 	 	_testcard_write_text(tc, tc->params->text2, tc->conf.text2);
 	}
 
-	_testcard_write_text(tc, tc->params->time, time_buf);
-	_testcard_write_text(tc, tc->params->date, date_buf);
+	if (tc->conf.clock_mode == TESTCARD_CLOCK_TIME || tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME)
+	{
+		_testcard_set_box(tc, tc->params->time, tc->black_level);
+		_testcard_write_text(tc, tc->params->time, time_buf);
+	}
+
+	if (tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME)
+	{
+		_testcard_set_box(tc, tc->params->date, tc->black_level);
+		_testcard_write_text(tc, tc->params->date, date_buf);
+	}
 }
 
 int testcard_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
@@ -634,7 +639,7 @@ static int _testcard_configure(testcard_t* state, vid_t *vid)
 
 	strcpy(state->conf.text1, vid->conf.testcard_text1);
 	strcpy(state->conf.text2, vid->conf.testcard_text2);
-
+	state->conf.clock_mode = vid->conf.testcard_clock_mode;
 	state->params = params;
 	
 	return (VID_OK);
@@ -812,6 +817,18 @@ int testcard_open(vid_t *s)
 		return(r);
 	}
 
+	if (tc->conf.clock_mode == TESTCARD_CLOCK_TIME || tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME)
+	{
+		_testcard_set_box(tc, tc->params->time, tc->black_level);
+		_testcard_philips_clock_cutout(tc, tc->params->time);
+	}
+
+	if (tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME)
+	{
+		_testcard_set_box(tc, tc->params->date, tc->black_level);
+		_testcard_philips_clock_cutout(tc, tc->params->date);
+	}
+
 	r = _testcard_pm8546_text_init(tc);
 	
 	if(r != VID_OK)
@@ -840,4 +857,14 @@ testcard_type_t testcard_type(const char *s)
 		return TESTCARD_PHILIPS_16X9;
 
 	return -1;
+}
+
+testcard_clock_mode_t testcard_clock_mode(const char *s)
+{
+	if (!strcmp(s, "time"))
+		return TESTCARD_CLOCK_TIME;
+	if (!strcmp(s, "datetime"))
+		return TESTCARD_CLOCK_DATE_TIME;
+
+	return TESTCARD_CLOCK_OFF;
 }

@@ -19,10 +19,18 @@
 #ifndef _TEST_PHILIPS_H
 #define _TEST_PHILIPS_H
 
+#define TESTCARD_MAX_TEXT	32
+
 typedef enum {
 	TESTCARD_PHILIPS_4X3 = 1,
 	TESTCARD_PHILIPS_16X9,
 } testcard_type_t;
+
+typedef enum {
+	TESTCARD_CLOCK_OFF,
+	TESTCARD_CLOCK_TIME,
+	TESTCARD_CLOCK_DATE_TIME
+} testcard_clock_mode_t;
 
 typedef struct {
 	int first_line;
@@ -49,8 +57,9 @@ typedef struct
 
 typedef struct {
 	testcard_type_t type;
-	char text1[128];
-	char text2[128];
+	testcard_clock_mode_t clock_mode;
+	char text1[TESTCARD_MAX_TEXT];
+	char text2[TESTCARD_MAX_TEXT];
 } testcard_conf_t;
 
 typedef struct {
@@ -67,6 +76,7 @@ typedef struct {
 } testcard_t;
 
 extern testcard_type_t testcard_type(const char *s);
+extern testcard_clock_mode_t testcard_clock_mode(const char *s);
 extern int testcard_configure(testcard_t* state, testcard_type_t type, int colour_mode);
 extern int testcard_open(vid_t *s);
 extern int testcard_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);

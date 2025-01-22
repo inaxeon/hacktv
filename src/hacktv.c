@@ -378,6 +378,7 @@ enum {
 	_OPT_INVERT_VIDEO,
 	_OPT_RAW_BB_FILE,
 	_OPT_TESTCARD,
+	_OPT_CLOCK_MODE,
 	_OPT_TEXT1,
 	_OPT_TEXT2,
 	_OPT_RAW_BB_BLANKING,
@@ -457,6 +458,7 @@ int main(int argc, char *argv[])
 		{ "invert-video",   no_argument,       0, _OPT_INVERT_VIDEO },
 		{ "raw-bb-file",    required_argument, 0, _OPT_RAW_BB_FILE },
 		{ "testcard",       required_argument, 0, _OPT_TESTCARD },
+		{ "clockmode",      required_argument, 0, _OPT_CLOCK_MODE },
 		{ "text1",          required_argument, 0, _OPT_TEXT1 },
 		{ "text2",          required_argument, 0, _OPT_TEXT2 },
 		{ "raw-bb-blanking", required_argument, 0, _OPT_RAW_BB_BLANKING },
@@ -834,6 +836,19 @@ int main(int argc, char *argv[])
 				}
 				
 				s.testcard_philips_type = type;
+				break;
+			}
+
+		case _OPT_CLOCK_MODE: /* --clockmode <mode> */
+			{
+				testcard_clock_mode_t mode = testcard_clock_mode(optarg);
+				if (mode < 0)
+				{
+					fprintf(stderr, "Unknown test card clock mode.\n");
+					return(-1);
+				}
+				
+				s.testcard_clock_mode = mode;
 				break;
 			}
 
@@ -1225,6 +1240,7 @@ int main(int argc, char *argv[])
 	vid_conf.secam_field_id_lines = s.secam_field_id_lines;
 
 	vid_conf.testcard_philips_type = s.testcard_philips_type;
+	vid_conf.testcard_clock_mode = s.testcard_clock_mode;
 	strcpy(vid_conf.testcard_text1, s.testcard_text1);
 	strcpy(vid_conf.testcard_text2, s.testcard_text2);
 	
