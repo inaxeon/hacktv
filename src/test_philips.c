@@ -49,28 +49,28 @@ typedef struct {
 	int16_t black_level;
 } pm8546_skey_filter_t;
 
-const testcard_text_boundaries_t philips4x3_pal_topbox = {
+const testcard_text_boundaries_t philips4x3_pal_secam_topbox = {
 	.first_line = 50,
 	.first_sample = 419,
 	.height = 42,
 	.width = 147
 };
 
-const testcard_text_boundaries_t philips4x3_pal_bottombox = {
+const testcard_text_boundaries_t philips4x3_pal_secam_bottombox = {
 	.first_line = 239,
 	.first_sample = 381,
 	.height = 42,
 	.width = 223
 };
 
-const testcard_text_boundaries_t philips4x3_pal_date = {
+const testcard_text_boundaries_t philips4x3_pal_secam_date = {
 	.first_line = 156,
 	.first_sample = 285,
 	.height = 40,
 	.width = 146
 };
 
-const testcard_text_boundaries_t philips4x3_pal_time = {
+const testcard_text_boundaries_t philips4x3_pal_secam_time = {
 	.first_line = 156,
 	.first_sample = 554,
 	.height = 40,
@@ -115,10 +115,10 @@ const testcard_params_t philips4x3_pal = {
 	.is_16x9 = 0,
 	.cut_clock = 1,
 	.sample_rate = 13500000,
-	.text1 = &philips4x3_pal_topbox,
-	.text2 = &philips4x3_pal_bottombox,
-	.date = &philips4x3_pal_date,
-	.time = &philips4x3_pal_time
+	.text1 = &philips4x3_pal_secam_topbox,
+	.text2 = &philips4x3_pal_secam_bottombox,
+	.date = &philips4x3_pal_secam_date,
+	.time = &philips4x3_pal_secam_time
 };
 
 const testcard_params_t philips4x3_secam = {
@@ -131,10 +131,10 @@ const testcard_params_t philips4x3_secam = {
 	.is_16x9 = 0,
 	.cut_clock = 0,
 	.sample_rate = 13500000,
-	.text1 = &philips4x3_pal_topbox,
-	.text2 = &philips4x3_pal_bottombox,
-	.date = &philips4x3_pal_date,
-	.time = &philips4x3_pal_time
+	.text1 = &philips4x3_pal_secam_topbox,
+	.text2 = &philips4x3_pal_secam_bottombox,
+	.date = &philips4x3_pal_secam_date,
+	.time = &philips4x3_pal_secam_time
 };
 
 const testcard_params_t philips4x3_secam_time = {
@@ -147,10 +147,10 @@ const testcard_params_t philips4x3_secam_time = {
 	.is_16x9 = 0,
 	.cut_clock = 0,
 	.sample_rate = 13500000,
-	.text1 = &philips4x3_pal_topbox,
-	.text2 = &philips4x3_pal_bottombox,
-	.date = &philips4x3_pal_date,
-	.time = &philips4x3_pal_time
+	.text1 = &philips4x3_pal_secam_topbox,
+	.text2 = &philips4x3_pal_secam_bottombox,
+	.date = &philips4x3_pal_secam_date,
+	.time = &philips4x3_pal_secam_time
 };
 
 const testcard_params_t philips4x3_secam_date_time = {
@@ -163,10 +163,10 @@ const testcard_params_t philips4x3_secam_date_time = {
 	.is_16x9 = 0,
 	.cut_clock = 0,
 	.sample_rate = 13500000,
-	.text1 = &philips4x3_pal_topbox,
-	.text2 = &philips4x3_pal_bottombox,
-	.date = &philips4x3_pal_date,
-	.time = &philips4x3_pal_time
+	.text1 = &philips4x3_pal_secam_topbox,
+	.text2 = &philips4x3_pal_secam_bottombox,
+	.date = &philips4x3_pal_secam_date,
+	.time = &philips4x3_pal_secam_time
 };
 
 const testcard_params_t philips4x3_ntsc = {
