@@ -50,10 +50,10 @@ typedef struct
 	int num_fields;
 	int is_16x9;
 	int cut_clock;
-	const testcard_text_boundaries_t* text1;
-	const testcard_text_boundaries_t* text2;
-	const testcard_text_boundaries_t* time;
-	const testcard_text_boundaries_t* date;
+	const testcard_text_boundaries_t* text1_box;
+	const testcard_text_boundaries_t* text2_box;
+	const testcard_text_boundaries_t* time_box;
+	const testcard_text_boundaries_t* date_box;
 } testcard_params_t;
 
 typedef struct {

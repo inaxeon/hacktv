@@ -115,10 +115,10 @@ const testcard_params_t philips4x3_pal = {
 	.is_16x9 = 0,
 	.cut_clock = 1,
 	.sample_rate = 13500000,
-	.text1 = &philips4x3_pal_secam_topbox,
-	.text2 = &philips4x3_pal_secam_bottombox,
-	.date = &philips4x3_pal_secam_date,
-	.time = &philips4x3_pal_secam_time
+	.text1_box = &philips4x3_pal_secam_topbox,
+	.text2_box = &philips4x3_pal_secam_bottombox,
+	.date_box = &philips4x3_pal_secam_date,
+	.time_box = &philips4x3_pal_secam_time
 };
 
 const testcard_params_t philips4x3_secam = {
@@ -131,10 +131,10 @@ const testcard_params_t philips4x3_secam = {
 	.is_16x9 = 0,
 	.cut_clock = 0,
 	.sample_rate = 13500000,
-	.text1 = &philips4x3_pal_secam_topbox,
-	.text2 = &philips4x3_pal_secam_bottombox,
-	.date = &philips4x3_pal_secam_date,
-	.time = &philips4x3_pal_secam_time
+	.text1_box = &philips4x3_pal_secam_topbox,
+	.text2_box = &philips4x3_pal_secam_bottombox,
+	.date_box = &philips4x3_pal_secam_date,
+	.time_box = &philips4x3_pal_secam_time
 };
 
 const testcard_params_t philips4x3_secam_time = {
@@ -147,10 +147,10 @@ const testcard_params_t philips4x3_secam_time = {
 	.is_16x9 = 0,
 	.cut_clock = 0,
 	.sample_rate = 13500000,
-	.text1 = &philips4x3_pal_secam_topbox,
-	.text2 = &philips4x3_pal_secam_bottombox,
-	.date = &philips4x3_pal_secam_date,
-	.time = &philips4x3_pal_secam_time
+	.text1_box = &philips4x3_pal_secam_topbox,
+	.text2_box = &philips4x3_pal_secam_bottombox,
+	.date_box = &philips4x3_pal_secam_date,
+	.time_box = &philips4x3_pal_secam_time
 };
 
 const testcard_params_t philips4x3_secam_date_time = {
@@ -163,10 +163,10 @@ const testcard_params_t philips4x3_secam_date_time = {
 	.is_16x9 = 0,
 	.cut_clock = 0,
 	.sample_rate = 13500000,
-	.text1 = &philips4x3_pal_secam_topbox,
-	.text2 = &philips4x3_pal_secam_bottombox,
-	.date = &philips4x3_pal_secam_date,
-	.time = &philips4x3_pal_secam_time
+	.text1_box = &philips4x3_pal_secam_topbox,
+	.text2_box = &philips4x3_pal_secam_bottombox,
+	.date_box = &philips4x3_pal_secam_date,
+	.time_box = &philips4x3_pal_secam_time
 };
 
 const testcard_params_t philips4x3_ntsc = {
@@ -179,10 +179,10 @@ const testcard_params_t philips4x3_ntsc = {
 	.is_16x9 = 0,
 	.cut_clock = 1,
 	.sample_rate = 13500000,
-	.text1 = &philips4x3_ntsc_topbox,
-	.text2 = &philips4x3_ntsc_bottombox,
-	.date = &philips4x3_ntsc_date,
-	.time = &philips4x3_ntsc_time
+	.text1_box = &philips4x3_ntsc_topbox,
+	.text2_box = &philips4x3_ntsc_bottombox,
+	.date_box = &philips4x3_ntsc_date,
+	.time_box = &philips4x3_ntsc_time
 };
 
 pm8546_promblock_t _char_blocks[] = {
@@ -644,26 +644,26 @@ static void _testcard_text_process(testcard_t* tc)
 
 	if (tc->conf.text1[0])
 	{
-		_testcard_restore_box(tc, tc->params->text1, tc->text1_orig, 0);
-		_testcard_write_text(tc, tc->params->text1, tc->conf.text1);
+		_testcard_restore_box(tc, tc->params->text1_box, tc->text1_orig, 0);
+		_testcard_write_text(tc, tc->params->text1_box, tc->conf.text1);
 	}
 
 	if (tc->conf.text2[0])
 	{
-		_testcard_restore_box(tc, tc->params->text2, tc->text2_orig, 0);
-	 	_testcard_write_text(tc, tc->params->text2, tc->conf.text2);
+		_testcard_restore_box(tc, tc->params->text2_box, tc->text2_orig, 0);
+	 	_testcard_write_text(tc, tc->params->text2_box, tc->conf.text2);
 	}
 
 	if (tc->conf.clock_mode == TESTCARD_CLOCK_TIME || tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME)
 	{
-		_testcard_restore_box(tc, tc->params->time, tc->time_orig, 0);
-		_testcard_write_text(tc, tc->params->time, time_buf);
+		_testcard_restore_box(tc, tc->params->time_box, tc->time_orig, 0);
+		_testcard_write_text(tc, tc->params->time_box, time_buf);
 	}
 
 	if (tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME)
 	{
-		_testcard_restore_box(tc, tc->params->date, tc->date_orig, 0);
-		_testcard_write_text(tc, tc->params->date, date_buf);
+		_testcard_restore_box(tc, tc->params->date_box, tc->date_orig, 0);
+		_testcard_write_text(tc, tc->params->date_box, date_buf);
 	}
 }
 
@@ -706,9 +706,13 @@ static int _testcard_configure(testcard_t* state, vid_t *vid)
 	{
 		case TESTCARD_PHILIPS_4X3:
 			if (vid->conf.colour_mode == VID_PAL)
+			{
 				params = &philips4x3_pal;
+			}
 			if (vid->conf.colour_mode == VID_NTSC)
+			{
 				params = &philips4x3_ntsc;
+			}
 			if (vid->conf.colour_mode == VID_SECAM)
 			{
 				switch (vid->conf.testcard_clock_mode)
@@ -940,17 +944,17 @@ int testcard_open(vid_t *s)
 
 	if ((tc->conf.clock_mode == TESTCARD_CLOCK_TIME || tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME) && tc->params->cut_clock)
 	{
-		_testcard_restore_box(tc, tc->params->time, NULL, tc->black_level);
-		_testcard_philips_clock_cutout(tc, tc->params->time);
+		_testcard_restore_box(tc, tc->params->time_box, NULL, tc->black_level);
+		_testcard_philips_clock_cutout(tc, tc->params->time_box);
 	}
 
 	if (tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME && tc->params->cut_clock)
 	{
-		_testcard_restore_box(tc, tc->params->date, NULL, tc->black_level);
-		_testcard_philips_clock_cutout(tc, tc->params->date);
+		_testcard_restore_box(tc, tc->params->date_box, NULL, tc->black_level);
+		_testcard_philips_clock_cutout(tc, tc->params->date_box);
 	}
 
-	r = _testcard_clone_box(tc, tc->params->text1, &tc->text1_orig);
+	r = _testcard_clone_box(tc, tc->params->text1_box, &tc->text1_orig);
 
 	if(r != VID_OK)
 	{
@@ -958,7 +962,7 @@ int testcard_open(vid_t *s)
 		return(r);
 	}
 
-	r = _testcard_clone_box(tc, tc->params->text2, &tc->text2_orig);
+	r = _testcard_clone_box(tc, tc->params->text2_box, &tc->text2_orig);
 
 	if(r != VID_OK)
 	{
@@ -966,7 +970,7 @@ int testcard_open(vid_t *s)
 		return(r);
 	}
 
-	r = _testcard_clone_box(tc, tc->params->time, &tc->time_orig);
+	r = _testcard_clone_box(tc, tc->params->time_box, &tc->time_orig);
 
 	if(r != VID_OK)
 	{
@@ -974,7 +978,7 @@ int testcard_open(vid_t *s)
 		return(r);
 	}
 
-	r = _testcard_clone_box(tc, tc->params->date, &tc->date_orig);
+	r = _testcard_clone_box(tc, tc->params->date_box, &tc->date_orig);
 
 	if(r != VID_OK)
 	{
