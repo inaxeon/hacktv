@@ -49,7 +49,7 @@ typedef struct
 	int samples_per_line;
 	int num_fields;
 	int is_16x9;
-	int cut_clock;
+	int can_cut;
 	const testcard_text_boundaries_t* text1_box;
 	const testcard_text_boundaries_t* text2_box;
 	const testcard_text_boundaries_t* time_box;

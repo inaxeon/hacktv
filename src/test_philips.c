@@ -113,7 +113,7 @@ const testcard_params_t philips4x3_pal = {
 	.samples_per_line = 864,
 	.num_fields = 8,
 	.is_16x9 = 0,
-	.cut_clock = 1,
+	.can_cut = 1,
 	.sample_rate = 13500000,
 	.text1_box = &philips4x3_pal_secam_topbox,
 	.text2_box = &philips4x3_pal_secam_bottombox,
@@ -129,7 +129,7 @@ const testcard_params_t philips4x3_secam = {
 	.samples_per_line = 864,
 	.num_fields = 4,
 	.is_16x9 = 0,
-	.cut_clock = 0,
+	.can_cut = 0,
 	.sample_rate = 13500000,
 	.text1_box = &philips4x3_pal_secam_topbox,
 	.text2_box = &philips4x3_pal_secam_bottombox,
@@ -145,7 +145,7 @@ const testcard_params_t philips4x3_secam_time = {
 	.samples_per_line = 864,
 	.num_fields = 4,
 	.is_16x9 = 0,
-	.cut_clock = 0,
+	.can_cut = 0,
 	.sample_rate = 13500000,
 	.text1_box = &philips4x3_pal_secam_topbox,
 	.text2_box = &philips4x3_pal_secam_bottombox,
@@ -161,7 +161,7 @@ const testcard_params_t philips4x3_secam_date_time = {
 	.samples_per_line = 864,
 	.num_fields = 4,
 	.is_16x9 = 0,
-	.cut_clock = 0,
+	.can_cut = 0,
 	.sample_rate = 13500000,
 	.text1_box = &philips4x3_pal_secam_topbox,
 	.text2_box = &philips4x3_pal_secam_bottombox,
@@ -177,7 +177,7 @@ const testcard_params_t philips4x3_ntsc = {
 	.samples_per_line = 858,
 	.num_fields = 4,
 	.is_16x9 = 0,
-	.cut_clock = 1,
+	.can_cut = 1,
 	.sample_rate = 13500000,
 	.text1_box = &philips4x3_ntsc_topbox,
 	.text2_box = &philips4x3_ntsc_bottombox,
@@ -942,19 +942,19 @@ int testcard_open(vid_t *s)
 		return(r);
 	}
 
-	if (tc->params->cut_clock)
+	if (tc->params->can_cut)
 	{
 		_testcard_restore_box(tc, tc->params->text1_box, NULL, tc->black_level);
 		_testcard_restore_box(tc, tc->params->text2_box, NULL, tc->black_level);
 	}
 
-	if ((tc->conf.clock_mode == TESTCARD_CLOCK_TIME || tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME) && tc->params->cut_clock)
+	if ((tc->conf.clock_mode == TESTCARD_CLOCK_TIME || tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME) && tc->params->can_cut)
 	{
 		_testcard_restore_box(tc, tc->params->time_box, NULL, tc->black_level);
 		_testcard_philips_clock_cutout(tc, tc->params->time_box);
 	}
 
-	if (tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME && tc->params->cut_clock)
+	if (tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME && tc->params->can_cut)
 	{
 		_testcard_restore_box(tc, tc->params->date_box, NULL, tc->black_level);
 		_testcard_philips_clock_cutout(tc, tc->params->date_box);
