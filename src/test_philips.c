@@ -185,6 +185,22 @@ const testcard_params_t philips4x3_ntsc = {
 	.time_box = &philips4x3_ntsc_time
 };
 
+const testcard_params_t philips_indian_head = {
+	.file_name = "philips_indian_head.bin",
+	.src_blanking_level = 0x2d4,
+	.src_white_level = 0xa4,
+	.num_lines = 625,
+	.samples_per_line = 1280,
+	.num_fields = 2,
+	.is_16x9 = 0,
+	.can_cut = 1,
+	.sample_rate = 20000000,
+	.text1_box = NULL,
+	.text2_box = NULL,
+	.date_box = NULL,
+	.time_box = NULL
+};
+
 pm8546_promblock_t _char_blocks[] = {
 	{ 1, 0x3F },  // ' '
 	{ 1, 0x7F },  // '!'
@@ -642,25 +658,25 @@ static void _testcard_text_process(testcard_t* tc)
 	strftime(time_buf, sizeof(time_buf), "%H:%M:%S", info);
 	strftime(date_buf, sizeof(time_buf), "%d-%m-%y", info);
 
-	if (tc->conf.text1[0])
+	if (tc->params->text1_box && tc->conf.text1[0])
 	{
 		_testcard_restore_box(tc, tc->params->text1_box, tc->text1_orig, 0);
 		_testcard_write_text(tc, tc->params->text1_box, tc->conf.text1);
 	}
 
-	if (tc->conf.text2[0])
+	if (tc->params->text2_box && tc->conf.text2[0])
 	{
 		_testcard_restore_box(tc, tc->params->text2_box, tc->text2_orig, 0);
 	 	_testcard_write_text(tc, tc->params->text2_box, tc->conf.text2);
 	}
 
-	if (tc->conf.clock_mode == TESTCARD_CLOCK_TIME || tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME)
+	if (tc->params->time_box && (tc->conf.clock_mode == TESTCARD_CLOCK_TIME || tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME))
 	{
 		_testcard_restore_box(tc, tc->params->time_box, tc->time_orig, 0);
 		_testcard_write_text(tc, tc->params->time_box, time_buf);
 	}
 
-	if (tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME)
+	if (tc->params->date_box && tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME)
 	{
 		_testcard_restore_box(tc, tc->params->date_box, tc->date_orig, 0);
 		_testcard_write_text(tc, tc->params->date_box, date_buf);
@@ -683,7 +699,7 @@ int testcard_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	/* On the real PM8546 we sweat over every CPU cycle, but in hacktv we have CPU time to burn. Do all of the text processing in one go */
 	 if (!s->testcard_philips->pos)
 	  	_testcard_text_process(s->testcard_philips);
-	
+
 	/* Copy samples into I channel */
 	for(x = 0; x < l->width; x++)
 		l->output[x * 2] = s->testcard_philips->samples[s->testcard_philips->pos++];
@@ -729,6 +745,11 @@ static int _testcard_configure(testcard_t* state, vid_t *vid)
 				}
 			}
 			break;
+		case TESTCARD_PHILIPS_INDIAN_HEAD:
+			if (vid->conf.colour_mode == VID_PAL)
+			{
+				params = &philips_indian_head;
+			}
 		default:
 			break;
 	}
@@ -942,54 +963,66 @@ int testcard_open(vid_t *s)
 		return(r);
 	}
 
-	if (tc->params->can_cut)
-	{
+	if (tc->params->text1_box && tc->params->can_cut)
 		_testcard_restore_box(tc, tc->params->text1_box, NULL, tc->black_level);
-		_testcard_restore_box(tc, tc->params->text2_box, NULL, tc->black_level);
-	}
 
-	if ((tc->conf.clock_mode == TESTCARD_CLOCK_TIME || tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME) && tc->params->can_cut)
+	if (tc->params->text2_box && tc->params->can_cut)
+		_testcard_restore_box(tc, tc->params->text2_box, NULL, tc->black_level);
+
+	if (tc->params->time_box && (tc->conf.clock_mode == TESTCARD_CLOCK_TIME || tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME) && tc->params->can_cut)
 	{
 		_testcard_restore_box(tc, tc->params->time_box, NULL, tc->black_level);
 		_testcard_philips_clock_cutout(tc, tc->params->time_box);
 	}
 
-	if (tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME && tc->params->can_cut)
+	if (tc->params->date_box && tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME && tc->params->can_cut)
 	{
 		_testcard_restore_box(tc, tc->params->date_box, NULL, tc->black_level);
 		_testcard_philips_clock_cutout(tc, tc->params->date_box);
 	}
 
-	r = _testcard_clone_box(tc, tc->params->text1_box, &tc->text1_orig);
-
-	if(r != VID_OK)
+	if (tc->params->text1_box)
 	{
-		testcard_free(tc);
-		return(r);
+		r = _testcard_clone_box(tc, tc->params->text1_box, &tc->text1_orig);
+
+		if(r != VID_OK)
+		{
+			testcard_free(tc);
+			return(r);
+		}
 	}
 
-	r = _testcard_clone_box(tc, tc->params->text2_box, &tc->text2_orig);
-
-	if(r != VID_OK)
+	if (tc->params->text2_box)
 	{
-		testcard_free(tc);
-		return(r);
+		r = _testcard_clone_box(tc, tc->params->text2_box, &tc->text2_orig);
+
+		if(r != VID_OK)
+		{
+			testcard_free(tc);
+			return(r);
+		}
 	}
 
-	r = _testcard_clone_box(tc, tc->params->time_box, &tc->time_orig);
-
-	if(r != VID_OK)
+	if (tc->params->time_box)
 	{
-		testcard_free(tc);
-		return(r);
+		r = _testcard_clone_box(tc, tc->params->time_box, &tc->time_orig);
+
+		if(r != VID_OK)
+		{
+			testcard_free(tc);
+			return(r);
+		}
 	}
 
-	r = _testcard_clone_box(tc, tc->params->date_box, &tc->date_orig);
-
-	if(r != VID_OK)
+	if (tc->params->date_box)
 	{
-		testcard_free(tc);
-		return(r);
+		r = _testcard_clone_box(tc, tc->params->date_box, &tc->date_orig);
+
+		if(r != VID_OK)
+		{
+			testcard_free(tc);
+			return(r);
+		}
 	}
 
 	r = _testcard_pm8546_text_init(tc);
@@ -1018,6 +1051,8 @@ testcard_type_t testcard_type(const char *s)
 		return TESTCARD_PHILIPS_4X3;
 	if (!strcmp(s, "philips16x9"))
 		return TESTCARD_PHILIPS_16X9;
+	if (!strcmp(s, "philipsih"))
+		return TESTCARD_PHILIPS_INDIAN_HEAD;
 
 	return -1;
 }

@@ -24,6 +24,7 @@
 typedef enum {
 	TESTCARD_PHILIPS_4X3 = 1,
 	TESTCARD_PHILIPS_16X9,
+	TESTCARD_PHILIPS_INDIAN_HEAD
 } testcard_type_t;
 
 typedef enum {
