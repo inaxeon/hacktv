@@ -759,16 +759,26 @@ static void _testcard_write_text(testcard_t* tc, const testcard_text_boundaries_
 			for (y = 0; y < (box->height / 2); y++)
 			{
 				int linef1_start = frame_start + ((y + box->first_line) * tc->params->samples_per_line) + next_on_screen_start;
-				int linef2_start = frame_start +
-					((y + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) + box->first_line) * tc->params->samples_per_line)
-					+ next_on_screen_start;
+				int linef2_start = frame_start + ((y + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2)
+					+ box->first_line) * tc->params->samples_per_line) + next_on_screen_start;
 				int textf1_start = text_sample_start + (((y * 2) + 0 + v_offset) * char_width_in_memory);
 				int textf2_start = text_sample_start + (((y * 2) + 1 + v_offset) * char_width_in_memory);
 
 				for (x = 0; x < char_width_in_memory / PM8546_SAMPLE_RATIO; x++)
 				{
-					tc->samples[linef1_start + x] += (tc->text_samples[(tc->params->num_lines == 625 ? textf1_start : textf2_start) + x] - black_level);
-					tc->samples[linef2_start + x] += (tc->text_samples[(tc->params->num_lines == 625 ? textf2_start : textf1_start) + x] - black_level);
+					int scale = ((tc->white_level - tc->black_level) * 0x10000) / (tc->white_level - black_level);
+					int src1 = (tc->text_samples[(tc->params->num_lines == 625 ? textf1_start : textf2_start) + x] - tc->black_level);
+					int src2 = (tc->text_samples[(tc->params->num_lines == 625 ? textf2_start : textf1_start) + x] - tc->black_level);
+					src1 = (src1 * 0x10000) / scale;
+					src2 = (src2 * 0x10000) / scale;
+					tc->samples[linef1_start + x] += src1;
+					tc->samples[linef2_start + x] += src2;
+					
+#ifndef _USE_FIR_TEXT_SCALING
+					/* FIR will violate the below, by a tiny little bit but we don't care */
+					if (tc->samples[linef1_start + x] < black_level || tc->samples[linef1_start + x] > tc->white_level)
+						fprintf(stderr, "black level error at %d level: %d min: %d max: %d\n", linef1_start + x, tc->samples[linef1_start + x], black_level, tc->white_level);
+#endif
 				}
 			}
 		}
