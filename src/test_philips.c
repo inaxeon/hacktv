@@ -476,7 +476,13 @@ static void _testcard_pm8546_copy_half_char(testcard_t* tc, uint8_t* rom, int de
 		{
 			int src_addr = (_char_blocks[src_idx].addr << 7) + (((x + 1) << 6) | y);
 
-			for (int bit = 0; bit < 8; bit++)
+			for (int bit = ((PM8546_BLOCK_FOLD / 2) * x); bit < ((x + 1) * (PM8546_BLOCK_FOLD / 2)); bit++)
+			{
+				int destaddr = dest_line_start + (x * PM8546_BLOCK_FOLD) + bit;
+				tc->text_samples[destaddr] = tc->black_level;
+			}
+
+			for (int bit = ((PM8546_BLOCK_FOLD / 2) * !x); bit < ((!x + 1) * (PM8546_BLOCK_FOLD / 2)); bit++)
 			{
 				int destaddr = dest_line_start + (x * PM8546_BLOCK_FOLD) + bit;
 				int val = (((rom[src_addr] & (1 << (7 - bit))) == (1 << (7 - bit)))) ? tc->white_level : tc->black_level;
@@ -775,7 +781,7 @@ static void _testcard_write_text(testcard_t* tc, const testcard_text_boundaries_
 					tc->samples[linef2_start + x] += src2;
 					
 #ifndef _USE_FIR_TEXT_SCALING
-					/* FIR will violate the below, by a tiny little bit but we don't care */
+					/* FIR will violate the below by a tiny almost unmeasurable amount but we don't care */
 					if (tc->samples[linef1_start + x] < black_level || tc->samples[linef1_start + x] > tc->white_level)
 						fprintf(stderr, "black level error at %d level: %d min: %d max: %d\n", linef1_start + x, tc->samples[linef1_start + x], black_level, tc->white_level);
 #endif
