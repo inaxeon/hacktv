@@ -24,7 +24,8 @@
 typedef enum {
 	TESTCARD_PHILIPS_4X3 = 1,
 	TESTCARD_PHILIPS_16X9,
-	TESTCARD_PHILIPS_INDIAN_HEAD
+	TESTCARD_FUBK_4X3,
+	TESTCARD_PHILIPS_INDIAN_HEAD,
 } testcard_type_t;
 
 typedef enum {
@@ -38,6 +39,7 @@ typedef struct {
 	int first_sample;
 	int height;
 	int width;
+	int black_level;
 } testcard_text_boundaries_t;
 
 typedef struct
@@ -79,6 +81,10 @@ typedef struct {
 	int16_t* text2_orig;
 	int16_t* time_orig;
 	int16_t* date_orig;
+	int16_t text1_black_level;
+	int16_t text2_black_level;
+	int16_t time_black_level;
+	int16_t date_black_level;
 } testcard_t;
 
 extern testcard_type_t testcard_type(const char *s);
