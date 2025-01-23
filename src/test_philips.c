@@ -393,7 +393,7 @@ pm8546_promblock_t _char_blocks[] = {
 	{ 2, 0x71 },  // 'y'
 	{ 2, 0x73 },  // 'z'
 	{ 1, 0xEE },  // '{': half-colon ':' (auto-generated)
-	{ 1, 0xEF },  // '}': half-dash: '-' (auto-generated)
+	{ 1, 0xEF },  // '|': half-dash: '-' (auto-generated)
 };
 
 static int _testcard_pm8546_skey_filter_init(pm8546_skey_filter_t* filter, int16_t black_level)
@@ -524,7 +524,7 @@ static void _testcard_pm8546_text_unfold(testcard_t* tc, uint8_t* rom)
 		}
 	}
 
-	/* Generated the blasted "half colon" and "half dash" used by FuBK and Philips 16x9 */
+	/* Generate the blasted "half colon" and "half dash" used by FuBK and Philips 16x9 */
 	_testcard_pm8546_copy_half_char(tc, rom, (sizeof(_char_blocks) / sizeof(pm8546_promblock_t)) - 2, 26); /* Half colon */
 	_testcard_pm8546_copy_half_char(tc, rom, (sizeof(_char_blocks) / sizeof(pm8546_promblock_t)) - 1, 13); /* Half dash */
 }
@@ -648,7 +648,6 @@ static int _testcard_clone_box(testcard_t* tc, const testcard_text_boundaries_t*
 				orig[box_start + (((y * 2) + 1) * box->width) + x] = tc->samples[linef2_start + box->first_sample + x];
 
 			}
-
 		}
 	}
 
@@ -663,13 +662,13 @@ static void _testcard_restore_box(testcard_t* tc, const testcard_text_boundaries
 	
 	for (f = 0; f < tc->params->num_fields / 2; f++)
 	{
-		int frame_start = (f * tc->params->samples_per_line * tc->params->num_lines);
+		int frame_start = box->first_sample + (f * tc->params->samples_per_line * tc->params->num_lines);
 		int box_start = ((f * box->width * box->height));
 
 		for (y = 0; y < box->height / 2; y++)
 		{
-			int linef1_start = frame_start + box->first_sample + ((y + box->first_line) * tc->params->samples_per_line);
-			int linef2_start = frame_start + box->first_sample + ((y + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) + box->first_line) * tc->params->samples_per_line);
+			int linef1_start = frame_start + ((y + box->first_line) * tc->params->samples_per_line);
+			int linef2_start = frame_start + ((y + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) + box->first_line) * tc->params->samples_per_line);
 
 			for (x = 0; x < box->width; x++)
 			{
@@ -692,17 +691,18 @@ static void _testcard_philips_clock_cutout(testcard_t *tc, const testcard_text_b
 	for (f = 0; f < tc->params->num_fields / 2; f++)
 	{
 		int frame_start = (f * tc->params->samples_per_line * tc->params->num_lines);
-		int first_line = frame_start + ((box->first_line) * tc->params->samples_per_line);
+		int box_start = frame_start + (box->first_sample - expand);
+		int first_line = box_start + ((box->first_line) * tc->params->samples_per_line);
 
 		for (y = 0; y < box->height / 2; y++)
 		{
-			int linef1_start = frame_start + (box->first_sample - expand) + ((y + box->first_line) * tc->params->samples_per_line);
-			int linef2_start = frame_start + (box->first_sample - expand) + ((y + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) + box->first_line) * tc->params->samples_per_line);
+			int linef1_start = box_start + ((y + box->first_line) * tc->params->samples_per_line);
+			int linef2_start = box_start + ((y + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) + box->first_line) * tc->params->samples_per_line);
 
 			for (x = 0; x < box->width + (expand * 2); x++)
 			{
-				tc->samples[linef1_start + x] = tc->samples[first_line + (box->first_sample - expand) + x];
-				tc->samples[linef2_start + x] = tc->samples[first_line + (box->first_sample - expand) + x];
+				tc->samples[linef1_start + x] = tc->samples[first_line + x];
+				tc->samples[linef2_start + x] = tc->samples[first_line + x];
 			}
 		}
 	}
@@ -710,12 +710,10 @@ static void _testcard_philips_clock_cutout(testcard_t *tc, const testcard_text_b
 
 static void _testcard_write_text(testcard_t* tc, const testcard_text_boundaries_t* box, const char *text, int black_level)
 {
-	int f, y, x, i, txt_len, max_char, blks_rendered = 0, blks = 0, indent;
+	int f, y, x, i, txt_len, blks_rendered = 0, blks = 0, indent, max_char;
 	pm8546_promblock_t* blk;
 
 	max_char = sizeof(_char_blocks) / sizeof(pm8546_promblock_t);
-
-	// _char_blocks
 	txt_len = strlen(text);
 
 	for (i = 0; i < txt_len; i++)
@@ -741,7 +739,7 @@ static void _testcard_write_text(testcard_t* tc, const testcard_text_boundaries_
 		int text_sample_start, char_width_in_memory, next_on_screen_start, v_offset;
 		char c = text[i];
 
-		if (blks_rendered >= (box->width / (PM8546_BLOCK_STEP / PM8546_SAMPLE_RATIO)))
+		if (blks_rendered >= blks)
 			break; // Too many chars. Bail.
 		
 		c -= ' ';
@@ -756,12 +754,12 @@ static void _testcard_write_text(testcard_t* tc, const testcard_text_boundaries_
 
 		for (f = 0; f < tc->params->num_fields / 2; f++)
 		{
-			int frame_start = (f * tc->params->samples_per_line * tc->params->num_lines);
+			int frame_start = box->first_sample + indent + (f * tc->params->samples_per_line * tc->params->num_lines);
 
 			for (y = 0; y < (box->height / 2); y++)
 			{
-				int linef1_start = frame_start + box->first_sample + indent + ((y + box->first_line) * tc->params->samples_per_line) + next_on_screen_start;
-				int linef2_start = frame_start + box->first_sample + indent +
+				int linef1_start = frame_start + ((y + box->first_line) * tc->params->samples_per_line) + next_on_screen_start;
+				int linef2_start = frame_start +
 					((y + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) + box->first_line) * tc->params->samples_per_line)
 					+ next_on_screen_start;
 				int textf1_start = text_sample_start + (((y * 2) + 0 + v_offset) * char_width_in_memory);
