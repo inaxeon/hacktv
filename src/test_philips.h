@@ -53,6 +53,7 @@ typedef struct
 	int num_fields;
 	int is_16x9;
 	int can_cut;
+	int skinny_clock;
 	const testcard_text_boundaries_t* text1_box;
 	const testcard_text_boundaries_t* text2_box;
 	const testcard_text_boundaries_t* time_box;
