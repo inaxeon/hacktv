@@ -33,6 +33,7 @@
 #define PM8546_SAMPLE_RATIO		2
 #define PM8546_BLOCK_HEIGHT	 	42
 #define PM8546_SAMPLE_RATE	  	27000000 /* Not always true, but true for what's been implemented so far */
+#define PM8546_CHAR_INDEX(x)	((x) - 32)
 
 #define _USE_FIR_TEXT_SCALING
 
@@ -530,9 +531,9 @@ static void _testcard_pm8546_text_unfold(testcard_t* tc, uint8_t* rom)
 		}
 	}
 
-	/* Generate the blasted "half colon" and "half dash" used by FuBK and Philips 16x9 */
-	_testcard_pm8546_copy_half_char(tc, rom, (sizeof(_char_blocks) / sizeof(pm8546_promblock_t)) - 2, 26); /* Half colon */
-	_testcard_pm8546_copy_half_char(tc, rom, (sizeof(_char_blocks) / sizeof(pm8546_promblock_t)) - 1, 13); /* Half dash */
+	/* Generate the blasted "half colon" and "half dash" used by FuBK and Philips 16x9 clock. They are not part of the standard character set. */
+	_testcard_pm8546_copy_half_char(tc, rom, (sizeof(_char_blocks) / sizeof(pm8546_promblock_t)) - 2 /* '{' */, PM8546_CHAR_INDEX(':')); /* Half colon */
+	_testcard_pm8546_copy_half_char(tc, rom, (sizeof(_char_blocks) / sizeof(pm8546_promblock_t)) - 1 /* '|' */, PM8546_CHAR_INDEX('-')); /* Half dash */
 }
 
 static int _testcard_pm8546_text_calculate_flanks(testcard_t* tc, pm8546_skey_filter_t* filter)
@@ -724,16 +725,15 @@ static void _testcard_write_text(testcard_t* tc, const testcard_text_boundaries_
 
 	for (i = 0; i < txt_len; i++)
 	{
-		char c = text[i];
-		c -= ' ';
+		int index = PM8546_CHAR_INDEX(text[i]);
 
 		if (blks >= (box->width / (PM8546_BLOCK_STEP / PM8546_SAMPLE_RATIO)))
 			break; // Too many chars. Bail.
 		
-		if (c >= max_char)
+		if (index >= max_char)
 			continue;
 
-		blk = &_char_blocks[(int)c];
+		blk = &_char_blocks[index];
 		blks += blk->len;
 	}
 
@@ -742,17 +742,17 @@ static void _testcard_write_text(testcard_t* tc, const testcard_text_boundaries_
 
 	for (i = 0; i < txt_len; i++)
 	{
-		int text_sample_start, char_width_in_memory, next_on_screen_start, v_offset;
-		char c = text[i];
+		int text_sample_start, char_width_in_memory, next_on_screen_start, v_offset, index;
+
+		index = PM8546_CHAR_INDEX(text[i]);
 
 		if (blks_rendered >= blks)
 			break; // Too many chars. Bail.
 		
-		c -= ' ';
-		if (c >= max_char)
+		if (index >= max_char)
 			continue;
 
-		blk = &_char_blocks[(int)c];
+		blk = &_char_blocks[index];
 		text_sample_start = blk->addr * PM8546_BLOCK_STEP * PM8546_BLOCK_HEIGHT;
 		char_width_in_memory = (blk->len * PM8546_BLOCK_STEP);
 		next_on_screen_start = (blks_rendered * PM8546_BLOCK_STEP / PM8546_SAMPLE_RATIO);
