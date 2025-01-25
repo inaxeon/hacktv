@@ -50,7 +50,7 @@ typedef struct
 	int num_lines;
 	long sample_rate;
 	int samples_per_line;
-	int num_fields;
+	int num_frames;
 	int is_16x9;
 	int can_cut;
 	int skinny_clock;

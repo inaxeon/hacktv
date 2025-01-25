@@ -154,7 +154,7 @@ const testcard_params_t philips4x3_pal = {
 	.src_white_level = 0x340,
 	.num_lines = 625,
 	.samples_per_line = 864,
-	.num_fields = 8,
+	.num_frames = 4,
 	.is_16x9 = 0,
 	.can_cut = 1,
 	.skinny_clock = 0,
@@ -171,7 +171,7 @@ const testcard_params_t philips4x3_secam = {
 	.src_white_level = 0xde,
 	.num_lines = 625,
 	.samples_per_line = 864,
-	.num_fields = 4,
+	.num_frames = 2,
 	.is_16x9 = 0,
 	.can_cut = 0,
 	.skinny_clock = 0,
@@ -188,7 +188,7 @@ const testcard_params_t philips4x3_secam_time = {
 	.src_white_level = 0xde,
 	.num_lines = 625,
 	.samples_per_line = 864,
-	.num_fields = 4,
+	.num_frames = 2,
 	.is_16x9 = 0,
 	.can_cut = 0,
 	.skinny_clock = 0,
@@ -205,7 +205,7 @@ const testcard_params_t philips4x3_secam_date_time = {
 	.src_white_level = 0xde,
 	.num_lines = 625,
 	.samples_per_line = 864,
-	.num_fields = 4,
+	.num_frames = 2,
 	.is_16x9 = 0,
 	.can_cut = 0,
 	.skinny_clock = 0,
@@ -222,7 +222,7 @@ const testcard_params_t philips4x3_ntsc = {
 	.src_white_level = 0x313,
 	.num_lines = 525,
 	.samples_per_line = 858,
-	.num_fields = 4,
+	.num_frames = 2,
 	.is_16x9 = 0,
 	.can_cut = 1,
 	.skinny_clock = 0,
@@ -239,7 +239,7 @@ const testcard_params_t fubk4x3 = {
 	.src_white_level = 0x340,
 	.num_lines = 625,
 	.samples_per_line = 864,
-	.num_fields = 8,
+	.num_frames = 4,
 	.is_16x9 = 0,
 	.can_cut = 0,
 	.skinny_clock = 1,
@@ -256,7 +256,7 @@ const testcard_params_t fubk4x3_time = {
 	.src_white_level = 0x340,
 	.num_lines = 625,
 	.samples_per_line = 864,
-	.num_fields = 8,
+	.num_frames = 4,
 	.is_16x9 = 0,
 	.can_cut = 0,
 	.skinny_clock = 1,
@@ -273,7 +273,7 @@ const testcard_params_t fubk4x3_date_time = {
 	.src_white_level = 0x340,
 	.num_lines = 625,
 	.samples_per_line = 864,
-	.num_fields = 8,
+	.num_frames = 4,
 	.is_16x9 = 0,
 	.can_cut = 0,
 	.skinny_clock = 1,
@@ -290,7 +290,7 @@ const testcard_params_t philips_indian_head = {
 	.src_white_level = 0xa4,
 	.num_lines = 625,
 	.samples_per_line = 1280,
-	.num_fields = 2,
+	.num_frames = 1,
 	.is_16x9 = 0,
 	.can_cut = 0,
 	.skinny_clock = 0,
@@ -532,8 +532,8 @@ static void _testcard_pm8546_text_unfold(testcard_t* tc, uint8_t* rom)
 	}
 
 	/* Generate the blasted "half colon" and "half dash" used by FuBK and Philips 16x9 clock. They are not part of the standard character set. */
-	_testcard_pm8546_copy_half_char(tc, rom, (sizeof(_char_blocks) / sizeof(pm8546_promblock_t)) - 2 /* '{' */, PM8546_CHAR_INDEX(':')); /* Half colon */
-	_testcard_pm8546_copy_half_char(tc, rom, (sizeof(_char_blocks) / sizeof(pm8546_promblock_t)) - 1 /* '|' */, PM8546_CHAR_INDEX('-')); /* Half dash */
+	_testcard_pm8546_copy_half_char(tc, rom, PM8546_CHAR_INDEX('{'), PM8546_CHAR_INDEX(':')); /* Half colon */
+	_testcard_pm8546_copy_half_char(tc, rom, PM8546_CHAR_INDEX('|'), PM8546_CHAR_INDEX('-')); /* Half dash */
 }
 
 static int _testcard_pm8546_text_calculate_flanks(testcard_t* tc, pm8546_skey_filter_t* filter)
@@ -631,7 +631,7 @@ static int _testcard_clone_box(testcard_t* tc, const testcard_text_boundaries_t*
 {
 	int f, y, x;
 
-	int16_t* orig = calloc(sizeof(int16_t), box->width * box->height * (tc->params->num_fields / 2));
+	int16_t* orig = calloc(sizeof(int16_t), box->width * box->height * tc->params->num_frames);
 
 	if (!orig)
 	{
@@ -639,7 +639,7 @@ static int _testcard_clone_box(testcard_t* tc, const testcard_text_boundaries_t*
 		return(VID_OUT_OF_MEMORY);
 	}
 
-	for (f = 0; f < tc->params->num_fields / 2; f++)
+	for (f = 0; f < tc->params->num_frames; f++)
 	{
 		int src_frame_start = (f * tc->params->samples_per_line * tc->params->num_lines);
 		int dest_frame_start = (f * box->width * box->height);
@@ -668,7 +668,7 @@ static void _testcard_restore_box(testcard_t* tc, const testcard_text_boundaries
 {
 	int f, y, x;
 	
-	for (f = 0; f < tc->params->num_fields / 2; f++)
+	for (f = 0; f < tc->params->num_frames; f++)
 	{
 		int dest_frame_start = (f * tc->params->samples_per_line * tc->params->num_lines);
 		int src_box_start = ((f * box->width * box->height));
@@ -698,7 +698,7 @@ static void _testcard_philips_clock_cutout(testcard_t *tc, const testcard_text_b
 
 	expand = 5;
 	
-	for (f = 0; f < tc->params->num_fields / 2; f++)
+	for (f = 0; f < tc->params->num_frames; f++)
 	{
 		int frame_start = (f * tc->params->samples_per_line * tc->params->num_lines);
 		int box_start = frame_start + (box->first_sample - expand);
@@ -766,7 +766,7 @@ static void _testcard_write_text(testcard_t* tc, const testcard_text_boundaries_
 		next_on_screen_start = (blks_rendered * PM8546_BLOCK_STEP / PM8546_SAMPLE_RATIO);
 		v_offset = (PM8546_BLOCK_HEIGHT - box->height) / 2;
 
-		for (f = 0; f < tc->params->num_fields / 2; f++)
+		for (f = 0; f < tc->params->num_frames; f++)
 		{
 			int box_start = indent + box->first_sample + (f * tc->params->samples_per_line * tc->params->num_lines);
 
