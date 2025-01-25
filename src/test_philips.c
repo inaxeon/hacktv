@@ -140,6 +140,38 @@ const testcard_text_boundaries_t philips16x9_pal_date = {
 	.black_level = INHERIT
 };
 
+const testcard_text_boundaries_t philips16x9_ntsc_topbox = {
+	.first_line = 45,
+	.first_sample = 429,
+	.height = 36,
+	.width = 108,
+	.black_level = INHERIT
+};
+
+const testcard_text_boundaries_t philips16x9_ntsc_bottombox = {
+	.first_line = 198,
+	.first_sample = 401,
+	.height = 36,
+	.width = 164,
+	.black_level = INHERIT
+};
+
+const testcard_text_boundaries_t philips16x9_ntsc_date = {
+	.first_line = 131,
+	.first_sample = 333,
+	.height = 32,
+	.width = 119,
+	.black_level = INHERIT
+};
+
+const testcard_text_boundaries_t philips16x9_ntsc_time = {
+	.first_line = 131,
+	.first_sample = 514,
+	.height = 32,
+	.width = 119,
+	.black_level = INHERIT
+};
+
 const testcard_text_boundaries_t philips16x9_pal_time = {
 	.first_line = 156,
 	.first_sample = 526,
@@ -280,6 +312,23 @@ const testcard_params_t philips16x9_pal = {
 	.text2_box = &philips16x9_pal_bottombox,
 	.time_box = &philips16x9_pal_time,
 	.date_box = &philips16x9_pal_date
+};
+
+const testcard_params_t philips16x9_ntsc = {
+	.file_name = "philips_16x9_ntsc.bin",
+	.src_blanking_level = 0xc00,
+	.src_white_level = 0x313,
+	.num_lines = 525,
+	.samples_per_line = 858,
+	.num_frames = 2,
+	.is_16x9 = 1,
+	.can_blank = 1,
+	.skinny_clock = 1,
+	.sample_rate = 13500000,
+	.text1_box = &philips16x9_ntsc_topbox,
+	.text2_box = &philips16x9_ntsc_bottombox,
+	.time_box = &philips16x9_ntsc_time,
+	.date_box = &philips16x9_ntsc_date
 };
 
 const testcard_params_t fubk4x3 = {
@@ -772,46 +821,55 @@ static void _testcard_philips_clock_cutout(testcard_t *tc, const testcard_text_b
 		/* This is absolutely horrible. In order to avoid distributing "16x9" versions with the clock pre-cut,
 		 * instead we patch in the shaped samples on the centre line which would have otherwise been there, to ensure rise time is respected.
 		 */
-		if (tc->params->is_16x9 && box == &philips16x9_pal_date)
+
+		if (tc->params->is_16x9 && tc->params->num_lines == 625)
 		{
+			int16_t curve[] = { 0x0b95, 0x09aa, 0x06a7, 0x0430, 0x034a };
+
 			int linef1_start = frame_start + ((10 + box->first_line) * tc->params->samples_per_line);
-			int linef2_start = frame_start + ((9 + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) + box->first_line) * tc->params->samples_per_line);
+			int linef2_start = frame_start + ((9 + 313 + box->first_line) * tc->params->samples_per_line);
 			
-			tc->samples[linef1_start + 463] = _testcard_calc_hacktv_level(tc, 0x0b95);
-			tc->samples[linef2_start + 463] = _testcard_calc_hacktv_level(tc, 0x0b95);
-
-			tc->samples[linef1_start + 464] = _testcard_calc_hacktv_level(tc, 0x09aa);
-			tc->samples[linef2_start + 464] = _testcard_calc_hacktv_level(tc, 0x09aa);
-
-			tc->samples[linef1_start + 465] = _testcard_calc_hacktv_level(tc, 0x06a7);
-			tc->samples[linef2_start + 465] = _testcard_calc_hacktv_level(tc, 0x06a7);
-
-			tc->samples[linef1_start + 466] = _testcard_calc_hacktv_level(tc, 0x0430);
-			tc->samples[linef2_start + 466] = _testcard_calc_hacktv_level(tc, 0x0430);
-
-			tc->samples[linef1_start + 467] = _testcard_calc_hacktv_level(tc, 0x034a);
-			tc->samples[linef2_start + 467] = _testcard_calc_hacktv_level(tc, 0x034a);
+			if (box == &philips16x9_pal_date)
+			{
+				for (int i = 0; i < (sizeof(curve) / sizeof(int16_t)); i++)
+				{
+					tc->samples[linef1_start + 462 + i] = _testcard_calc_hacktv_level(tc, curve[i]);
+					tc->samples[linef2_start + 462 + i] = _testcard_calc_hacktv_level(tc, curve[i]);
+				}
+			}
+			if (box == &philips16x9_pal_time)
+			{
+				for (int i = 0; i < (sizeof(curve) / sizeof(int16_t)); i++)
+				{
+					tc->samples[linef1_start + 521 + i] = _testcard_calc_hacktv_level(tc, curve[((sizeof(curve) / sizeof(int16_t)) - 1) - i]);
+					tc->samples[linef2_start + 521 + i] = _testcard_calc_hacktv_level(tc, curve[((sizeof(curve) / sizeof(int16_t)) - 1) - i]);
+				}
+			}
 		}
 
-		if (tc->params->is_16x9 && box == &philips16x9_pal_time)
+		if (tc->params->is_16x9 && tc->params->num_lines == 525)
 		{
-			int linef1_start = frame_start + ((10 + box->first_line) * tc->params->samples_per_line);
-			int linef2_start = frame_start + ((9 + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) + box->first_line) * tc->params->samples_per_line);
+			int16_t curve[] = { 0x0b36, 0x09fd, 0x0762, 0x04ad, 0x0343 };
+
+			int linef1_start = frame_start + ((7 + box->first_line) * tc->params->samples_per_line);
+			int linef2_start = frame_start + ((8 + 262 + box->first_line) * tc->params->samples_per_line);
 			
-			tc->samples[linef1_start + 522] = _testcard_calc_hacktv_level(tc, 0x034a);
-			tc->samples[linef2_start + 522] = _testcard_calc_hacktv_level(tc, 0x034a);
-
-			tc->samples[linef1_start + 523] = _testcard_calc_hacktv_level(tc, 0x0430);
-			tc->samples[linef2_start + 523] = _testcard_calc_hacktv_level(tc, 0x0430);
-
-			tc->samples[linef1_start + 524] = _testcard_calc_hacktv_level(tc, 0x06a7);
-			tc->samples[linef2_start + 524] = _testcard_calc_hacktv_level(tc, 0x06a7);
-
-			tc->samples[linef1_start + 525] = _testcard_calc_hacktv_level(tc, 0x09aa);
-			tc->samples[linef2_start + 525] = _testcard_calc_hacktv_level(tc, 0x09aa);
-
-			tc->samples[linef1_start + 526] = _testcard_calc_hacktv_level(tc, 0x0b95);
-			tc->samples[linef2_start + 526] = _testcard_calc_hacktv_level(tc, 0x0b95);
+			if (box == &philips16x9_ntsc_date)
+			{
+				for (int i = 0; i < (sizeof(curve) / sizeof(int16_t)); i++)
+				{
+					tc->samples[linef1_start + 452 + i] = _testcard_calc_hacktv_level(tc, curve[i]);
+					tc->samples[linef2_start + 452 + i] = _testcard_calc_hacktv_level(tc, curve[i]);
+				}
+			}
+			if (box == &philips16x9_ntsc_time)
+			{
+				for (int i = 0; i < (sizeof(curve) / sizeof(int16_t)); i++)
+				{
+					tc->samples[linef1_start + 508 + i] = _testcard_calc_hacktv_level(tc, curve[((sizeof(curve) / sizeof(int16_t)) - 1) - i]);
+					tc->samples[linef2_start + 508 + i] = _testcard_calc_hacktv_level(tc, curve[((sizeof(curve) / sizeof(int16_t)) - 1) - i]);
+				}
+			}
 		}
 	}
 }
@@ -1004,6 +1062,10 @@ static int _testcard_configure(testcard_t* tc, vid_t *vid)
 			if (vid->conf.colour_mode == VID_PAL)
 			{
 				params = &philips16x9_pal;
+			}
+			if (vid->conf.colour_mode == VID_NTSC)
+			{
+				params = &philips16x9_ntsc;
 			}
 			break;
 		case TESTCARD_FUBK_4X3:
