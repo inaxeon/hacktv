@@ -1256,6 +1256,7 @@ static int _testcard_configure(testcard_t* tc, vid_t *vid)
 			{
 				params = &philips_indian_head;
 			}
+			break;
 		case TESTCARD_CBAR:
 			if (vid->conf.colour_mode == VID_PAL)
 			{
