@@ -244,7 +244,6 @@ const testcard_text_boundaries_t fubk16x9_datebox = {
 	.black_level = 0xb8f
 };
 
-
 const testcard_params_t philips4x3_pal = {
 	.file_name = "philips_4x3_pal.bin",
 	.src_blanking_level = 0xc00,
@@ -481,6 +480,40 @@ const testcard_params_t fubk16x9_pal_date_time = {
 	.text2_box = &fubk16x9_rightbox,
 	.time_box = &fubk16x9_timebox,
 	.date_box = &fubk16x9_datebox
+};
+
+const testcard_params_t ebu_cbar_pal = {
+	.file_name = "ebu_cbar_pal.bin",
+	.src_blanking_level = 0xc00,
+	.src_white_level = 0x340,
+	.num_lines = 625,
+	.samples_per_line = 864,
+	.num_frames = 4,
+	.is_philips_16x9 = 0,
+	.can_blank = 0,
+	.skinny_clock = 0,
+	.sample_rate = 13500000,
+	.text1_box = NULL,
+	.text2_box = NULL,
+	.time_box = NULL,
+	.date_box = NULL
+};
+
+const testcard_params_t smtpe_cbar_ntsc = {
+	.file_name = "smtpe_cbar_ntsc.bin",
+	.src_blanking_level = 0xc00,
+	.src_white_level = 0x313,
+	.num_lines = 525,
+	.samples_per_line = 858,
+	.num_frames = 2,
+	.is_philips_16x9 = 0,
+	.can_blank = 0,
+	.skinny_clock = 0,
+	.sample_rate = 13500000,
+	.text1_box = NULL,
+	.text2_box = NULL,
+	.time_box = NULL,
+	.date_box = NULL
 };
 
 pm8546_promblock_t _char_blocks[] = {
@@ -1189,6 +1222,16 @@ static int _testcard_configure(testcard_t* tc, vid_t *vid)
 			{
 				params = &philips_indian_head;
 			}
+		case TESTCARD_CBAR:
+			if (vid->conf.colour_mode == VID_PAL)
+			{
+				params = &ebu_cbar_pal;
+			}
+			if (vid->conf.colour_mode == VID_NTSC)
+			{
+				params = &smtpe_cbar_ntsc;
+			}
+			break;
 		default:
 			break;
 	}
@@ -1501,7 +1544,9 @@ testcard_type_t testcard_type(const char *s)
 		return TESTCARD_FUBK_16X9;
 	if (!strcmp(s, "philipsih"))
 		return TESTCARD_PHILIPS_INDIAN_HEAD;
-
+	if (!strcmp(s, "cbar"))
+		return TESTCARD_CBAR;
+	
 	return -1;
 }
 

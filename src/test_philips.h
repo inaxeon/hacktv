@@ -27,6 +27,7 @@ typedef enum {
 	TESTCARD_FUBK_4X3,
 	TESTCARD_FUBK_16X9,
 	TESTCARD_PHILIPS_INDIAN_HEAD,
+	TESTCARD_CBAR
 } testcard_type_t;
 
 typedef enum {
