@@ -116,6 +116,38 @@ const testcard_text_boundaries_t philips4x3_ntsc_time = {
 	.black_level = INHERIT
 };
 
+const testcard_text_boundaries_t philips16x9_pal_topbox = {
+	.first_line = 50,
+	.first_sample = 438,
+	.height = 42,
+	.width = 111,
+	.black_level = INHERIT
+};
+
+const testcard_text_boundaries_t philips16x9_pal_bottombox = {
+	.first_line = 239,
+	.first_sample = 409,
+	.height = 42,
+	.width = 169,
+	.black_level = INHERIT
+};
+
+const testcard_text_boundaries_t philips16x9_pal_date = {
+	.first_line = 156,
+	.first_sample = 338,
+	.height = 40,
+	.width = 122,
+	.black_level = INHERIT
+};
+
+const testcard_text_boundaries_t philips16x9_pal_time = {
+	.first_line = 156,
+	.first_sample = 526,
+	.height = 40,
+	.width = 122,
+	.black_level = INHERIT
+};
+
 const testcard_text_boundaries_t fubk4x3_leftbox = {
 	.first_line = 166,
 	.first_sample = 362,
@@ -156,7 +188,7 @@ const testcard_params_t philips4x3_pal = {
 	.samples_per_line = 864,
 	.num_frames = 4,
 	.is_16x9 = 0,
-	.can_cut = 1,
+	.can_blank = 1,
 	.skinny_clock = 0,
 	.sample_rate = 13500000,
 	.text1_box = &philips4x3_pal_secam_topbox,
@@ -173,7 +205,7 @@ const testcard_params_t philips4x3_secam = {
 	.samples_per_line = 864,
 	.num_frames = 2,
 	.is_16x9 = 0,
-	.can_cut = 0,
+	.can_blank = 0,
 	.skinny_clock = 0,
 	.sample_rate = 13500000,
 	.text1_box = &philips4x3_pal_secam_topbox,
@@ -190,7 +222,7 @@ const testcard_params_t philips4x3_secam_time = {
 	.samples_per_line = 864,
 	.num_frames = 2,
 	.is_16x9 = 0,
-	.can_cut = 0,
+	.can_blank = 0,
 	.skinny_clock = 0,
 	.sample_rate = 13500000,
 	.text1_box = &philips4x3_pal_secam_topbox,
@@ -207,7 +239,7 @@ const testcard_params_t philips4x3_secam_date_time = {
 	.samples_per_line = 864,
 	.num_frames = 2,
 	.is_16x9 = 0,
-	.can_cut = 0,
+	.can_blank = 0,
 	.skinny_clock = 0,
 	.sample_rate = 13500000,
 	.text1_box = &philips4x3_pal_secam_topbox,
@@ -224,13 +256,30 @@ const testcard_params_t philips4x3_ntsc = {
 	.samples_per_line = 858,
 	.num_frames = 2,
 	.is_16x9 = 0,
-	.can_cut = 1,
+	.can_blank = 1,
 	.skinny_clock = 0,
 	.sample_rate = 13500000,
 	.text1_box = &philips4x3_ntsc_topbox,
 	.text2_box = &philips4x3_ntsc_bottombox,
 	.time_box = &philips4x3_ntsc_time,
 	.date_box = &philips4x3_ntsc_date
+};
+
+const testcard_params_t philips16x9_pal = {
+	.file_name = "philips_16x9_pal.bin",
+	.src_blanking_level = 0xc00,
+	.src_white_level = 0x340,
+	.num_lines = 625,
+	.samples_per_line = 864,
+	.num_frames = 4,
+	.is_16x9 = 1,
+	.can_blank = 1,
+	.skinny_clock = 1,
+	.sample_rate = 13500000,
+	.text1_box = &philips16x9_pal_topbox,
+	.text2_box = &philips16x9_pal_bottombox,
+	.time_box = &philips16x9_pal_time,
+	.date_box = &philips16x9_pal_date
 };
 
 const testcard_params_t fubk4x3 = {
@@ -241,7 +290,7 @@ const testcard_params_t fubk4x3 = {
 	.samples_per_line = 864,
 	.num_frames = 4,
 	.is_16x9 = 0,
-	.can_cut = 0,
+	.can_blank = 0,
 	.skinny_clock = 1,
 	.sample_rate = 13500000,
 	.text1_box = &fubk4x3_leftbox,
@@ -258,7 +307,7 @@ const testcard_params_t fubk4x3_time = {
 	.samples_per_line = 864,
 	.num_frames = 4,
 	.is_16x9 = 0,
-	.can_cut = 0,
+	.can_blank = 0,
 	.skinny_clock = 1,
 	.sample_rate = 13500000,
 	.text1_box = &fubk4x3_leftbox,
@@ -275,7 +324,7 @@ const testcard_params_t fubk4x3_date_time = {
 	.samples_per_line = 864,
 	.num_frames = 4,
 	.is_16x9 = 0,
-	.can_cut = 0,
+	.can_blank = 0,
 	.skinny_clock = 1,
 	.sample_rate = 13500000,
 	.text1_box = &fubk4x3_leftbox,
@@ -292,7 +341,7 @@ const testcard_params_t philips_indian_head = {
 	.samples_per_line = 1280,
 	.num_frames = 1,
 	.is_16x9 = 0,
-	.can_cut = 0,
+	.can_blank = 0,
 	.skinny_clock = 0,
 	.sample_rate = 20000000,
 	.text1_box = NULL,
@@ -692,11 +741,15 @@ static void _testcard_restore_box(testcard_t* tc, const testcard_text_boundaries
 	}
 }
 
+static int16_t _testcard_calc_hacktv_level(testcard_t* tc, const int16_t level)
+{
+	return level == INHERIT ? tc->black_level : tc->blanking_level + (((int) level - tc->params->src_blanking_level) *
+		(tc->white_level - tc->blanking_level) / (tc->params->src_white_level - tc->params->src_blanking_level));
+}
+
 static void _testcard_philips_clock_cutout(testcard_t *tc, const testcard_text_boundaries_t* box)
 {
-	int f, y, x, expand;
-
-	expand = 5;
+	int f, y, x, expand = 3;
 	
 	for (f = 0; f < tc->params->num_frames; f++)
 	{
@@ -714,6 +767,51 @@ static void _testcard_philips_clock_cutout(testcard_t *tc, const testcard_text_b
 				tc->samples[linef1_start + x] = tc->samples[first_line + x];
 				tc->samples[linef2_start + x] = tc->samples[first_line + x];
 			}
+		}
+
+		/* This is absolutely horrible. In order to avoid distributing "16x9" versions with the clock pre-cut,
+		 * instead we patch in the shaped samples on the centre line which would have otherwise been there, to ensure rise time is respected.
+		 */
+		if (tc->params->is_16x9 && box == &philips16x9_pal_date)
+		{
+			int linef1_start = frame_start + ((10 + box->first_line) * tc->params->samples_per_line);
+			int linef2_start = frame_start + ((9 + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) + box->first_line) * tc->params->samples_per_line);
+			
+			tc->samples[linef1_start + 463] = _testcard_calc_hacktv_level(tc, 0x0b95);
+			tc->samples[linef2_start + 463] = _testcard_calc_hacktv_level(tc, 0x0b95);
+
+			tc->samples[linef1_start + 464] = _testcard_calc_hacktv_level(tc, 0x09aa);
+			tc->samples[linef2_start + 464] = _testcard_calc_hacktv_level(tc, 0x09aa);
+
+			tc->samples[linef1_start + 465] = _testcard_calc_hacktv_level(tc, 0x06a7);
+			tc->samples[linef2_start + 465] = _testcard_calc_hacktv_level(tc, 0x06a7);
+
+			tc->samples[linef1_start + 466] = _testcard_calc_hacktv_level(tc, 0x0430);
+			tc->samples[linef2_start + 466] = _testcard_calc_hacktv_level(tc, 0x0430);
+
+			tc->samples[linef1_start + 467] = _testcard_calc_hacktv_level(tc, 0x034a);
+			tc->samples[linef2_start + 467] = _testcard_calc_hacktv_level(tc, 0x034a);
+		}
+
+		if (tc->params->is_16x9 && box == &philips16x9_pal_time)
+		{
+			int linef1_start = frame_start + ((10 + box->first_line) * tc->params->samples_per_line);
+			int linef2_start = frame_start + ((9 + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) + box->first_line) * tc->params->samples_per_line);
+			
+			tc->samples[linef1_start + 522] = _testcard_calc_hacktv_level(tc, 0x034a);
+			tc->samples[linef2_start + 522] = _testcard_calc_hacktv_level(tc, 0x034a);
+
+			tc->samples[linef1_start + 523] = _testcard_calc_hacktv_level(tc, 0x0430);
+			tc->samples[linef2_start + 523] = _testcard_calc_hacktv_level(tc, 0x0430);
+
+			tc->samples[linef1_start + 524] = _testcard_calc_hacktv_level(tc, 0x06a7);
+			tc->samples[linef2_start + 524] = _testcard_calc_hacktv_level(tc, 0x06a7);
+
+			tc->samples[linef1_start + 525] = _testcard_calc_hacktv_level(tc, 0x09aa);
+			tc->samples[linef2_start + 525] = _testcard_calc_hacktv_level(tc, 0x09aa);
+
+			tc->samples[linef1_start + 526] = _testcard_calc_hacktv_level(tc, 0x0b95);
+			tc->samples[linef2_start + 526] = _testcard_calc_hacktv_level(tc, 0x0b95);
 		}
 	}
 }
@@ -871,12 +969,6 @@ int testcard_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	return(1);
 }
 
-static int16_t _testcard_calc_box_box_black_level(testcard_t* tc, const testcard_text_boundaries_t* box)
-{
-	return box->black_level == INHERIT ? tc->black_level : tc->blanking_level + (((int) box->black_level - tc->params->src_blanking_level) *
-		(tc->white_level - tc->blanking_level) / (tc->params->src_white_level - tc->params->src_blanking_level));
-}
-
 static int _testcard_configure(testcard_t* tc, vid_t *vid)
 {
 	const testcard_params_t *params = NULL;
@@ -906,6 +998,12 @@ static int _testcard_configure(testcard_t* tc, vid_t *vid)
 						params = &philips4x3_secam_date_time;
 						break;
 				}
+			}
+			break;
+		case TESTCARD_PHILIPS_16X9:
+			if (vid->conf.colour_mode == VID_PAL)
+			{
+				params = &philips16x9_pal;
 			}
 			break;
 		case TESTCARD_FUBK_4X3:
@@ -952,16 +1050,16 @@ static int _testcard_configure(testcard_t* tc, vid_t *vid)
 	tc->params = params;
 
 	if (params->text1_box)
-		tc->text1_black_level = _testcard_calc_box_box_black_level(tc, params->text1_box);
+		tc->text1_black_level = _testcard_calc_hacktv_level(tc, params->text1_box->black_level);
 
 	if (params->text2_box)
-		tc->text2_black_level = _testcard_calc_box_box_black_level(tc, params->text1_box);
+		tc->text2_black_level = _testcard_calc_hacktv_level(tc, params->text1_box->black_level);
 
 	if (params->time_box)
-		tc->time_black_level = _testcard_calc_box_box_black_level(tc, params->time_box);
+		tc->time_black_level = _testcard_calc_hacktv_level(tc, params->time_box->black_level);
 
 	if (params->date_box)
-		tc->date_black_level = _testcard_calc_box_box_black_level(tc, params->date_box);
+		tc->date_black_level = _testcard_calc_hacktv_level(tc, params->date_box->black_level);
 
 	return (VID_OK);
 }
@@ -1155,19 +1253,19 @@ int testcard_open(vid_t *s)
 		return(r);
 	}
 
-	if (tc->params->text1_box && tc->params->can_cut)
+	if (tc->params->text1_box && tc->params->can_blank)
 		_testcard_restore_box(tc, tc->params->text1_box, NULL, tc->text1_black_level);
 
-	if (tc->params->text2_box && tc->params->can_cut)
+	if (tc->params->text2_box && tc->params->can_blank)
 		_testcard_restore_box(tc, tc->params->text2_box, NULL, tc->text2_black_level);
 
-	if (tc->params->time_box && (tc->conf.clock_mode == TESTCARD_CLOCK_TIME || tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME) && tc->params->can_cut)
+	if (tc->params->time_box && (tc->conf.clock_mode == TESTCARD_CLOCK_TIME || tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME) && tc->params->can_blank)
 	{
 		_testcard_restore_box(tc, tc->params->time_box, NULL, tc->time_black_level);
 		_testcard_philips_clock_cutout(tc, tc->params->time_box);
 	}
 
-	if (tc->params->date_box && tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME && tc->params->can_cut)
+	if (tc->params->date_box && tc->conf.clock_mode == TESTCARD_CLOCK_DATE_TIME && tc->params->can_blank)
 	{
 		_testcard_restore_box(tc, tc->params->date_box, NULL, tc->date_black_level);
 		_testcard_philips_clock_cutout(tc, tc->params->date_box);
@@ -1224,13 +1322,6 @@ int testcard_open(vid_t *s)
 		testcard_free(tc);
 		return(r);
 	}
-
-#if 0
-	// Dump text samples for analysis
-	FILE* f = fopen("test_out.bin", "wb");
-	fwrite((void *)tc->text_samples, sizeof(int16_t), tc->ntext_samples, f);
-	fclose(f);
-#endif
 
 	s->testcard_philips = tc;
 

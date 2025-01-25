@@ -52,7 +52,7 @@ typedef struct
 	int samples_per_line;
 	int num_frames;
 	int is_16x9;
-	int can_cut;
+	int can_blank;
 	int skinny_clock;
 	const testcard_text_boundaries_t* text1_box;
 	const testcard_text_boundaries_t* text2_box;
