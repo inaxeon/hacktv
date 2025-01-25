@@ -230,7 +230,7 @@ const testcard_text_boundaries_t fubk16x9_rightbox = {
 
 const testcard_text_boundaries_t fubk16x9_timebox = {
 	.first_line = 266,
-	.first_sample = 657,
+	.first_sample = 617,
 	.height = 38,
 	.width = 118,
 	.black_level = 0xb8f
@@ -238,7 +238,7 @@ const testcard_text_boundaries_t fubk16x9_timebox = {
 
 const testcard_text_boundaries_t fubk16x9_datebox = {
 	.first_line = 266,
-	.first_sample = 209,
+	.first_sample = 253,
 	.height = 38,
 	.width = 118,
 	.black_level = 0xb8f
@@ -434,6 +434,40 @@ const testcard_params_t philips_indian_head = {
 
 const testcard_params_t fubk16x9_pal = {
 	.file_name = "fubk_16x9_pal.bin",
+	.src_blanking_level = 0xc00,
+	.src_white_level = 0x340,
+	.num_lines = 625,
+	.samples_per_line = 864,
+	.num_frames = 4,
+	.is_philips_16x9 = 0,
+	.can_blank = 0,
+	.skinny_clock = 1,
+	.sample_rate = 13500000,
+	.text1_box = &fubk16x9_leftbox,
+	.text2_box = &fubk16x9_rightbox,
+	.time_box = &fubk16x9_timebox,
+	.date_box = &fubk16x9_datebox
+};
+
+const testcard_params_t fubk16x9_pal_time = {
+	.file_name = "fubk_16x9_pal_time.bin",
+	.src_blanking_level = 0xc00,
+	.src_white_level = 0x340,
+	.num_lines = 625,
+	.samples_per_line = 864,
+	.num_frames = 4,
+	.is_philips_16x9 = 0,
+	.can_blank = 0,
+	.skinny_clock = 1,
+	.sample_rate = 13500000,
+	.text1_box = &fubk16x9_leftbox,
+	.text2_box = &fubk16x9_rightbox,
+	.time_box = &fubk16x9_timebox,
+	.date_box = NULL
+};
+
+const testcard_params_t fubk16x9_pal_date_time = {
+	.file_name = "fubk_16x9_pal_date_time.bin",
 	.src_blanking_level = 0xc00,
 	.src_white_level = 0x340,
 	.num_lines = 625,
@@ -830,9 +864,7 @@ static void _testcard_restore_box(testcard_t* tc, const testcard_text_boundaries
 
 			for (x = 0; x < box->width; x++)
 			{
-				//printf("samples[%d] = 0xb8f;\n", linef1_start + box->first_sample + x);
 				tc->samples[dest_f1_start + x] = orig != NULL ? orig[src_f1_start + x] : level;
-				//printf("samples[%d] = 0xb8f;\n", linef2_start + box->first_sample + x);
 				tc->samples[dest_f2_start + x] = orig != NULL ? orig[src_f2_start + x] : level;
 			}
 
@@ -1143,12 +1175,12 @@ static int _testcard_configure(testcard_t* tc, vid_t *vid)
 					case TESTCARD_CLOCK_OFF:
 						params = &fubk16x9_pal;
 						break;
-					// case TESTCARD_CLOCK_TIME:
-					// 	params = &fubk16x9_pal;
-					// 	break;
-					// case TESTCARD_CLOCK_DATE_TIME:
-					// 	params = &fubk16x9_pal;
-					// 	break;
+					case TESTCARD_CLOCK_TIME:
+						params = &fubk16x9_pal_time;
+						break;
+					case TESTCARD_CLOCK_DATE_TIME:
+						params = &fubk16x9_pal_date_time;
+						break;
 				}
 			}
 			break;
