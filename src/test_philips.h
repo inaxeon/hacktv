@@ -25,6 +25,7 @@ typedef enum {
 	TESTCARD_PHILIPS_4X3 = 1,
 	TESTCARD_PHILIPS_16X9,
 	TESTCARD_FUBK_4X3,
+	TESTCARD_FUBK_16X9,
 	TESTCARD_PHILIPS_INDIAN_HEAD,
 } testcard_type_t;
 
@@ -51,7 +52,7 @@ typedef struct
 	long sample_rate;
 	int samples_per_line;
 	int num_frames;
-	int is_16x9;
+	int is_philips_16x9;
 	int can_blank;
 	int skinny_clock;
 	const testcard_text_boundaries_t* text1_box;

@@ -212,6 +212,39 @@ const testcard_text_boundaries_t fubk4x3_datebox = {
 	.black_level = 0xb8f
 };
 
+const testcard_text_boundaries_t fubk16x9_leftbox = {
+	.first_line = 166,
+	.first_sample = 395,
+	.height = 40,
+	.width = 96,
+	.black_level = INHERIT
+};
+
+const testcard_text_boundaries_t fubk16x9_rightbox = {
+	.first_line = 166,
+	.first_sample = 494,
+	.height = 40,
+	.width = 96,
+	.black_level = INHERIT
+};
+
+const testcard_text_boundaries_t fubk16x9_timebox = {
+	.first_line = 266,
+	.first_sample = 657,
+	.height = 38,
+	.width = 118,
+	.black_level = 0xb8f
+};
+
+const testcard_text_boundaries_t fubk16x9_datebox = {
+	.first_line = 266,
+	.first_sample = 209,
+	.height = 38,
+	.width = 118,
+	.black_level = 0xb8f
+};
+
+
 const testcard_params_t philips4x3_pal = {
 	.file_name = "philips_4x3_pal.bin",
 	.src_blanking_level = 0xc00,
@@ -219,7 +252,7 @@ const testcard_params_t philips4x3_pal = {
 	.num_lines = 625,
 	.samples_per_line = 864,
 	.num_frames = 4,
-	.is_16x9 = 0,
+	.is_philips_16x9 = 0,
 	.can_blank = 1,
 	.skinny_clock = 0,
 	.sample_rate = 13500000,
@@ -236,7 +269,7 @@ const testcard_params_t philips4x3_secam = {
 	.num_lines = 625,
 	.samples_per_line = 864,
 	.num_frames = 2,
-	.is_16x9 = 0,
+	.is_philips_16x9 = 0,
 	.can_blank = 0,
 	.skinny_clock = 0,
 	.sample_rate = 13500000,
@@ -253,7 +286,7 @@ const testcard_params_t philips4x3_secam_time = {
 	.num_lines = 625,
 	.samples_per_line = 864,
 	.num_frames = 2,
-	.is_16x9 = 0,
+	.is_philips_16x9 = 0,
 	.can_blank = 0,
 	.skinny_clock = 0,
 	.sample_rate = 13500000,
@@ -270,7 +303,7 @@ const testcard_params_t philips4x3_secam_date_time = {
 	.num_lines = 625,
 	.samples_per_line = 864,
 	.num_frames = 2,
-	.is_16x9 = 0,
+	.is_philips_16x9 = 0,
 	.can_blank = 0,
 	.skinny_clock = 0,
 	.sample_rate = 13500000,
@@ -287,7 +320,7 @@ const testcard_params_t philips4x3_ntsc = {
 	.num_lines = 525,
 	.samples_per_line = 858,
 	.num_frames = 2,
-	.is_16x9 = 0,
+	.is_philips_16x9 = 0,
 	.can_blank = 1,
 	.skinny_clock = 0,
 	.sample_rate = 13500000,
@@ -304,7 +337,7 @@ const testcard_params_t philips16x9_pal = {
 	.num_lines = 625,
 	.samples_per_line = 864,
 	.num_frames = 4,
-	.is_16x9 = 1,
+	.is_philips_16x9 = 1,
 	.can_blank = 1,
 	.skinny_clock = 1,
 	.sample_rate = 13500000,
@@ -321,7 +354,7 @@ const testcard_params_t philips16x9_ntsc = {
 	.num_lines = 525,
 	.samples_per_line = 858,
 	.num_frames = 2,
-	.is_16x9 = 1,
+	.is_philips_16x9 = 1,
 	.can_blank = 1,
 	.skinny_clock = 1,
 	.sample_rate = 13500000,
@@ -338,7 +371,7 @@ const testcard_params_t fubk4x3 = {
 	.num_lines = 625,
 	.samples_per_line = 864,
 	.num_frames = 4,
-	.is_16x9 = 0,
+	.is_philips_16x9 = 0,
 	.can_blank = 0,
 	.skinny_clock = 1,
 	.sample_rate = 13500000,
@@ -355,7 +388,7 @@ const testcard_params_t fubk4x3_time = {
 	.num_lines = 625,
 	.samples_per_line = 864,
 	.num_frames = 4,
-	.is_16x9 = 0,
+	.is_philips_16x9 = 0,
 	.can_blank = 0,
 	.skinny_clock = 1,
 	.sample_rate = 13500000,
@@ -372,7 +405,7 @@ const testcard_params_t fubk4x3_date_time = {
 	.num_lines = 625,
 	.samples_per_line = 864,
 	.num_frames = 4,
-	.is_16x9 = 0,
+	.is_philips_16x9 = 0,
 	.can_blank = 0,
 	.skinny_clock = 1,
 	.sample_rate = 13500000,
@@ -389,7 +422,7 @@ const testcard_params_t philips_indian_head = {
 	.num_lines = 625,
 	.samples_per_line = 1280,
 	.num_frames = 1,
-	.is_16x9 = 0,
+	.is_philips_16x9 = 0,
 	.can_blank = 0,
 	.skinny_clock = 0,
 	.sample_rate = 20000000,
@@ -397,6 +430,23 @@ const testcard_params_t philips_indian_head = {
 	.text2_box = NULL,
 	.date_box = NULL,
 	.time_box = NULL
+};
+
+const testcard_params_t fubk16x9_pal = {
+	.file_name = "fubk_16x9_pal.bin",
+	.src_blanking_level = 0xc00,
+	.src_white_level = 0x340,
+	.num_lines = 625,
+	.samples_per_line = 864,
+	.num_frames = 4,
+	.is_philips_16x9 = 0,
+	.can_blank = 0,
+	.skinny_clock = 1,
+	.sample_rate = 13500000,
+	.text1_box = &fubk16x9_leftbox,
+	.text2_box = &fubk16x9_rightbox,
+	.time_box = &fubk16x9_timebox,
+	.date_box = &fubk16x9_datebox
 };
 
 pm8546_promblock_t _char_blocks[] = {
@@ -822,7 +872,7 @@ static void _testcard_philips_clock_cutout(testcard_t *tc, const testcard_text_b
 		 * instead we patch in the shaped samples on the centre line which would have otherwise been there, to ensure rise time is respected.
 		 */
 
-		if (tc->params->is_16x9 && tc->params->num_lines == 625)
+		if (tc->params->is_philips_16x9 && tc->params->num_lines == 625)
 		{
 			int16_t curve[] = { 0x0b95, 0x09aa, 0x06a7, 0x0430, 0x034a };
 
@@ -847,7 +897,7 @@ static void _testcard_philips_clock_cutout(testcard_t *tc, const testcard_text_b
 			}
 		}
 
-		if (tc->params->is_16x9 && tc->params->num_lines == 525)
+		if (tc->params->is_philips_16x9 && tc->params->num_lines == 525)
 		{
 			int16_t curve[] = { 0x0b36, 0x09fd, 0x0762, 0x04ad, 0x0343 };
 
@@ -1082,6 +1132,23 @@ static int _testcard_configure(testcard_t* tc, vid_t *vid)
 					case TESTCARD_CLOCK_DATE_TIME:
 						params = &fubk4x3_date_time;
 						break;
+				}
+			}
+			break;
+		case TESTCARD_FUBK_16X9:
+			if (vid->conf.colour_mode == VID_PAL)
+			{
+				switch (vid->conf.testcard_clock_mode)
+				{
+					case TESTCARD_CLOCK_OFF:
+						params = &fubk16x9_pal;
+						break;
+					// case TESTCARD_CLOCK_TIME:
+					// 	params = &fubk16x9_pal;
+					// 	break;
+					// case TESTCARD_CLOCK_DATE_TIME:
+					// 	params = &fubk16x9_pal;
+					// 	break;
 				}
 			}
 			break;
@@ -1398,6 +1465,8 @@ testcard_type_t testcard_type(const char *s)
 		return TESTCARD_PHILIPS_16X9;
 	if (!strcmp(s, "fubk4x3"))
 		return TESTCARD_FUBK_4X3;
+	if (!strcmp(s, "fubk16x9"))
+		return TESTCARD_FUBK_16X9;
 	if (!strcmp(s, "philipsih"))
 		return TESTCARD_PHILIPS_INDIAN_HEAD;
 
