@@ -118,17 +118,17 @@ const testcard_text_boundaries_t philips4x3_ntsc_time = {
 
 const testcard_text_boundaries_t fubk4x3_leftbox = {
 	.first_line = 166,
-	.first_sample = 363,
+	.first_sample = 362,
 	.height = 40,
-	.width = 126,
+	.width = 128,
 	.black_level = INHERIT
 };
 
 const testcard_text_boundaries_t fubk4x3_rightbox = {
 	.first_line = 166,
-	.first_sample = 496,
+	.first_sample = 495,
 	.height = 40,
-	.width = 126,
+	.width = 128,
 	.black_level = INHERIT
 };
 
@@ -641,19 +641,20 @@ static int _testcard_clone_box(testcard_t* tc, const testcard_text_boundaries_t*
 
 	for (f = 0; f < tc->params->num_fields / 2; f++)
 	{
-		int frame_start = (f * tc->params->samples_per_line * tc->params->num_lines);
-		int box_start = ((f * box->width * box->height));
+		int src_frame_start = (f * tc->params->samples_per_line * tc->params->num_lines);
+		int dest_frame_start = (f * box->width * box->height);
 
 		for (y = 0; y < box->height / 2; y++)
 		{
-			int linef1_start = frame_start + ((y + box->first_line) * tc->params->samples_per_line);
-			int linef2_start = frame_start + ((y + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) + box->first_line) * tc->params->samples_per_line);
+			int src_f1_start = src_frame_start + ((y + box->first_line) * tc->params->samples_per_line) + box->first_sample;
+			int src_f2_start = src_f1_start + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) * tc->params->samples_per_line;
+			int dest_f1_start = dest_frame_start + ((y * 2)) * box->width;
+			int dest_f2_start = dest_frame_start + ((y * 2) + 1) * box->width;
 
 			for (x = 0; x < box->width; x++)
 			{
-				orig[box_start + (((y * 2) + 0) * box->width) + x] = tc->samples[linef1_start + box->first_sample + x];
-				orig[box_start + (((y * 2) + 1) * box->width) + x] = tc->samples[linef2_start + box->first_sample + x];
-
+				orig[dest_f1_start + x] = tc->samples[src_f1_start + x];
+				orig[dest_f2_start + x] = tc->samples[src_f2_start + x];
 			}
 		}
 	}
@@ -669,20 +670,22 @@ static void _testcard_restore_box(testcard_t* tc, const testcard_text_boundaries
 	
 	for (f = 0; f < tc->params->num_fields / 2; f++)
 	{
-		int frame_start = box->first_sample + (f * tc->params->samples_per_line * tc->params->num_lines);
-		int box_start = ((f * box->width * box->height));
+		int dest_frame_start = (f * tc->params->samples_per_line * tc->params->num_lines);
+		int src_box_start = ((f * box->width * box->height));
 
 		for (y = 0; y < box->height / 2; y++)
 		{
-			int linef1_start = frame_start + ((y + box->first_line) * tc->params->samples_per_line);
-			int linef2_start = frame_start + ((y + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) + box->first_line) * tc->params->samples_per_line);
+			int dest_f1_start = dest_frame_start + ((y + box->first_line) * tc->params->samples_per_line) + box->first_sample;
+			int dest_f2_start = dest_f1_start + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2) * tc->params->samples_per_line;
+			int src_f1_start = src_box_start + ((y * 2)) * box->width;
+			int src_f2_start = src_box_start + ((y * 2) + 1) * box->width;
 
 			for (x = 0; x < box->width; x++)
 			{
 				//printf("samples[%d] = 0xb8f;\n", linef1_start + box->first_sample + x);
-				tc->samples[linef1_start + x] = orig != NULL ? orig[box_start + (((y * 2) + 0) * box->width) + x] : level;
+				tc->samples[dest_f1_start + x] = orig != NULL ? orig[src_f1_start + x] : level;
 				//printf("samples[%d] = 0xb8f;\n", linef2_start + box->first_sample + x);
-				tc->samples[linef2_start + x] = orig != NULL ? orig[box_start + (((y * 2) + 1) * box->width) + x] : level;
+				tc->samples[dest_f2_start + x] = orig != NULL ? orig[src_f2_start + x] : level;
 			}
 
 		}
@@ -727,13 +730,14 @@ static void _testcard_write_text(testcard_t* tc, const testcard_text_boundaries_
 	{
 		int index = PM8546_CHAR_INDEX(text[i]);
 
-		if (blks >= (box->width / (PM8546_BLOCK_STEP / PM8546_SAMPLE_RATIO)))
-			break; // Too many chars. Bail.
-		
 		if (index >= max_char)
 			continue;
 
 		blk = &_char_blocks[index];
+
+		if ((blks + blk->len) > (box->width / (PM8546_BLOCK_STEP / PM8546_SAMPLE_RATIO)))
+			break; // Too many chars. Bail.
+
 		blks += blk->len;
 	}
 
@@ -753,6 +757,10 @@ static void _testcard_write_text(testcard_t* tc, const testcard_text_boundaries_
 			continue;
 
 		blk = &_char_blocks[index];
+
+		if ((blks_rendered + blk->len) > blks)
+			break; // Too many chars. Bail.
+
 		text_sample_start = blk->addr * PM8546_BLOCK_STEP * PM8546_BLOCK_HEIGHT;
 		char_width_in_memory = (blk->len * PM8546_BLOCK_STEP);
 		next_on_screen_start = (blks_rendered * PM8546_BLOCK_STEP / PM8546_SAMPLE_RATIO);
@@ -760,18 +768,19 @@ static void _testcard_write_text(testcard_t* tc, const testcard_text_boundaries_
 
 		for (f = 0; f < tc->params->num_fields / 2; f++)
 		{
-			int frame_start = box->first_sample + indent + (f * tc->params->samples_per_line * tc->params->num_lines);
+			int box_start = indent + box->first_sample + (f * tc->params->samples_per_line * tc->params->num_lines);
 
 			for (y = 0; y < (box->height / 2); y++)
 			{
-				int linef1_start = frame_start + ((y + box->first_line) * tc->params->samples_per_line) + next_on_screen_start;
-				int linef2_start = frame_start + ((y + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2)
+				int linef1_start = box_start + ((y + box->first_line) * tc->params->samples_per_line) + next_on_screen_start;
+				int linef2_start = box_start + ((y + ((tc->params->num_lines + (tc->params->num_lines == 625 ? 1 : 0)) / 2)
 					+ box->first_line) * tc->params->samples_per_line) + next_on_screen_start;
 				int textf1_start = text_sample_start + (((y * 2) + 0 + v_offset) * char_width_in_memory);
 				int textf2_start = text_sample_start + (((y * 2) + 1 + v_offset) * char_width_in_memory);
 
 				for (x = 0; x < char_width_in_memory / PM8546_SAMPLE_RATIO; x++)
 				{
+					/* On some test cards i.e. FuBK the black levels differ between boxes, so we need to scale text voltages before rendering */
 					int scale = ((tc->white_level - tc->black_level) * 0x10000) / (tc->white_level - black_level);
 					int src1 = (tc->text_samples[(tc->params->num_lines == 625 ? textf1_start : textf2_start) + x] - tc->black_level);
 					int src2 = (tc->text_samples[(tc->params->num_lines == 625 ? textf2_start : textf1_start) + x] - tc->black_level);
