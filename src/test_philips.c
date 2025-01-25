@@ -1367,7 +1367,7 @@ static int _testcard_pm8546_rom_load(testcard_t* tc, uint8_t** buf)
 {
 	int file_len;
 
-	FILE* f = fopen("pm8546a.bin", "rb");
+	FILE* f = fopen("pm8546g.bin", "rb");
 
 	if (!f)
 	{
@@ -1379,7 +1379,7 @@ static int _testcard_pm8546_rom_load(testcard_t* tc, uint8_t** buf)
 	file_len = ftell(f);
 	fseek(f, 0, SEEK_SET);
 
-	if (file_len != 0x10000)
+	if (file_len != 0x8000)
 	{
 		fprintf(stderr, "testcard: PM8546 character set PROM size incorrect\n");
 		fclose(f);
