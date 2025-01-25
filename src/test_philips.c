@@ -516,6 +516,40 @@ const testcard_params_t smtpe_cbar_ntsc = {
 	.date_box = NULL
 };
 
+const testcard_params_t pulse_bar_pal = {
+	.file_name = "pulse_bar_pal.bin",
+	.src_blanking_level = 0xc00,
+	.src_white_level = 0x340,
+	.num_lines = 625,
+	.samples_per_line = 864,
+	.num_frames = 4,
+	.is_philips_16x9 = 0,
+	.can_blank = 0,
+	.skinny_clock = 0,
+	.sample_rate = 13500000,
+	.text1_box = NULL,
+	.text2_box = NULL,
+	.time_box = NULL,
+	.date_box = NULL
+};
+
+const testcard_params_t sin_x_x_pal = {
+	.file_name = "sin_x_x_pal.bin",
+	.src_blanking_level = 0xc00,
+	.src_white_level = 0x340,
+	.num_lines = 625,
+	.samples_per_line = 864,
+	.num_frames = 4,
+	.is_philips_16x9 = 0,
+	.can_blank = 0,
+	.skinny_clock = 0,
+	.sample_rate = 13500000,
+	.text1_box = NULL,
+	.text2_box = NULL,
+	.time_box = NULL,
+	.date_box = NULL
+};
+
 pm8546_promblock_t _char_blocks[] = {
 	{ 1, 0x3F },  // ' '
 	{ 1, 0x7F },  // '!'
@@ -1232,6 +1266,18 @@ static int _testcard_configure(testcard_t* tc, vid_t *vid)
 				params = &smtpe_cbar_ntsc;
 			}
 			break;
+		case TESTCARD_PULSE_AND_BAR:
+			if (vid->conf.colour_mode == VID_PAL)
+			{
+				params = &pulse_bar_pal;
+			}
+			break;
+		case TESTCARD_SIN_X_X:
+			if (vid->conf.colour_mode == VID_PAL)
+			{
+				params = &sin_x_x_pal;
+			}
+			break;
 		default:
 			break;
 	}
@@ -1546,6 +1592,10 @@ testcard_type_t testcard_type(const char *s)
 		return TESTCARD_PHILIPS_INDIAN_HEAD;
 	if (!strcmp(s, "cbar"))
 		return TESTCARD_CBAR;
+	if (!strcmp(s, "pulseandbar"))
+		return TESTCARD_PULSE_AND_BAR;
+	if (!strcmp(s, "sinxx"))
+		return TESTCARD_SIN_X_X;
 	
 	return -1;
 }
