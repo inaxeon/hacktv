@@ -4167,7 +4167,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		
 		_add_lineprocess(s, "rawbb", 1, NULL, _vid_next_line_rawbb, NULL);
 	}
-	if(s->conf.testsignal_philips_type > 0)
+	if(s->conf.testsignal_type > 0)
 	{
 		r = testsignal_open(s);
 
@@ -4176,7 +4176,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			vid_free(s);
 			return(r);
 		}
-		_add_lineprocess(s, "testsignal_philips", 1, NULL, testsignal_next_line, NULL);
+		_add_lineprocess(s, "testsignal", 1, NULL, testsignal_next_line, NULL);
 	}
 	else if(s->conf.type == VID_MAC)
 	{
@@ -4722,9 +4722,9 @@ void vid_free(vid_t *s)
 		mac_free(s);
 	}
 
-	if (s->testsignal_philips)
+	if (s->testsignal)
 	{
-		free(s->testsignal_philips);
+		testsignal_free(s->testsignal);
 	}
 	
 	fifo_reader_close(&s->audio_reader);

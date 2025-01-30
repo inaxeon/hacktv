@@ -97,5 +97,6 @@ extern testsignal_clock_mode_t testsignal_clock_mode(const char *s);
 extern int testsignal_configure(testsignal_t* state, testsignal_type_t type, int colour_mode);
 extern int testsignal_open(vid_t *s);
 extern int testsignal_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);
+extern void testsignal_free(testsignal_t *tc);
 
 #endif /* _TESTSIGNAL_H */

@@ -649,7 +649,7 @@ pm8546_promblock_t _char_blocks[] = {
 
 static int _testsignal_pm8546_skey_filter_init(pm8546_skey_filter_t* filter, int16_t black_level)
 {
-	double text_rise_time = 150E-9; // Text rise time
+	double text_rise_time = 150e-9; // Text rise time
 	double fs = PM8546_SAMPLE_RATE; // PM8546 pixel clock
 	double ax = floor(1.03734 * text_rise_time * fs);
 	double ampl_r = 0;
@@ -725,15 +725,15 @@ static void _testsignal_pm8546_copy_half_char(testsignal_t* tc, uint8_t* rom, in
 
 		for (x = 0; x < PM8546_BLOCK_MIN; x++)
 		{
-			int src_addr = (_char_blocks[src_idx].addr << 7) + (((x + 1) << 6) | y);
+			int bit, src_addr = (_char_blocks[src_idx].addr << 7) + (((x + 1) << 6) | y);
 
-			for (int bit = ((PM8546_BLOCK_FOLD / 2) * x); bit < ((x + 1) * (PM8546_BLOCK_FOLD / 2)); bit++)
+			for (bit = ((PM8546_BLOCK_FOLD / 2) * x); bit < ((x + 1) * (PM8546_BLOCK_FOLD / 2)); bit++)
 			{
 				int destaddr = dest_line_start + (x * PM8546_BLOCK_FOLD) + bit;
 				tc->text_samples[destaddr] = tc->black_level;
 			}
 
-			for (int bit = ((PM8546_BLOCK_FOLD / 2) * !x); bit < ((!x + 1) * (PM8546_BLOCK_FOLD / 2)); bit++)
+			for (bit = ((PM8546_BLOCK_FOLD / 2) * !x); bit < ((!x + 1) * (PM8546_BLOCK_FOLD / 2)); bit++)
 			{
 				int destaddr = dest_line_start + (x * PM8546_BLOCK_FOLD) + bit;
 				int val = (((rom[src_addr] & (1 << (7 - bit))) == (1 << (7 - bit)))) ? tc->white_level : tc->black_level;
@@ -946,7 +946,7 @@ static int16_t _testsignal_calc_hacktv_level(testsignal_t* tc, const int16_t lev
 		(tc->white_level - tc->blanking_level) / (tc->params->src_white_level - tc->params->src_blanking_level));
 }
 
-static void _testsignal_philips_clock_cutout(testsignal_t *tc, const testsignal_text_boundaries_t* box)
+static void _testsignal_clock_cutout(testsignal_t *tc, const testsignal_text_boundaries_t* box)
 {
 	int f, y, x, expand = 3;
 	
@@ -1160,15 +1160,15 @@ int testsignal_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	l->audio_len = 0;
 
 	/* On the real PM8546 we sweat over every CPU cycle, but in hacktv we have CPU time to burn. Do all of the text processing in one go */
-	 if (!s->testsignal_philips->pos)
-	  	_testsignal_text_process(s->testsignal_philips);
+	 if (!s->testsignal->pos)
+	  	_testsignal_text_process(s->testsignal);
 
 	/* Copy samples into I channel */
 	for(x = 0; x < l->width; x++)
-		l->output[x * 2] = s->testsignal_philips->samples[s->testsignal_philips->pos++];
+		l->output[x * 2] = s->testsignal->samples[s->testsignal->pos++];
 
-	if(s->testsignal_philips->pos == s->testsignal_philips->nsamples)
-		s->testsignal_philips->pos = 0; /* Back to line 0 */
+	if(s->testsignal->pos == s->testsignal->nsamples)
+		s->testsignal->pos = 0; /* Back to line 0 */
 	
 	/* Clear the Q channel */
 	for(x = 0; x < s->max_width; x++)
@@ -1181,7 +1181,7 @@ static int _testsignal_configure(testsignal_t* tc, vid_t *vid)
 {
 	const testsignal_params_t *params = NULL;
 
-	switch (vid->conf.testsignal_philips_type)
+	switch (vid->conf.testsignal_type)
 	{
 		case TESTSIGNAL_PHILIPS_4X3:
 			if (vid->conf.colour_mode == VID_PAL)
@@ -1471,6 +1471,12 @@ void testsignal_free(testsignal_t *tc)
 	if (tc->date_orig)
 		free(tc->date_orig);
 
+	if (tc->text_samples)
+		free(tc->text_samples);
+
+	if (tc->samples)
+		free(tc->samples);
+
 	free(tc);
 }
 
@@ -1514,13 +1520,13 @@ int testsignal_open(vid_t *s)
 	if (tc->params->time_box && (tc->conf.clock_mode == TESTSIGNAL_CLOCK_TIME || tc->conf.clock_mode == TESTSIGNAL_CLOCK_DATE_TIME) && tc->params->can_blank)
 	{
 		_testsignal_restore_box(tc, tc->params->time_box, NULL, tc->time_black_level);
-		_testsignal_philips_clock_cutout(tc, tc->params->time_box);
+		_testsignal_clock_cutout(tc, tc->params->time_box);
 	}
 
 	if (tc->params->date_box && tc->conf.clock_mode == TESTSIGNAL_CLOCK_DATE_TIME && tc->params->can_blank)
 	{
 		_testsignal_restore_box(tc, tc->params->date_box, NULL, tc->date_black_level);
-		_testsignal_philips_clock_cutout(tc, tc->params->date_box);
+		_testsignal_clock_cutout(tc, tc->params->date_box);
 	}
 
 	if (tc->params->text1_box)
@@ -1575,7 +1581,7 @@ int testsignal_open(vid_t *s)
 		return(r);
 	}
 
-	s->testsignal_philips = tc;
+	s->testsignal = tc;
 
 	return(r);
 }

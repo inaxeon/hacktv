@@ -835,7 +835,7 @@ int main(int argc, char *argv[])
 					return(-1);
 				}
 				
-				s.testsignal_philips_type = type;
+				s.testsignal_type = type;
 				break;
 			}
 
@@ -1239,7 +1239,7 @@ int main(int argc, char *argv[])
 	vid_conf.secam_field_id = s.secam_field_id;
 	vid_conf.secam_field_id_lines = s.secam_field_id_lines;
 
-	vid_conf.testsignal_philips_type = s.testsignal_philips_type;
+	vid_conf.testsignal_type = s.testsignal_type;
 	vid_conf.testsignal_clock_mode = s.testsignal_clock_mode;
 	strcpy(vid_conf.testsignal_text1, s.testsignal_text1);
 	strcpy(vid_conf.testsignal_text2, s.testsignal_text2);

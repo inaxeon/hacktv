@@ -153,8 +153,8 @@ typedef struct {
 	int16_t raw_bb_blanking_level;
 	int16_t raw_bb_white_level;
 
-	/* Philips testsignals */
-	testsignal_type_t testsignal_philips_type;
+	/* Testsignals */
+	testsignal_type_t testsignal_type;
 	testsignal_clock_mode_t testsignal_clock_mode;
 	char testsignal_text1[TESTSIGNAL_MAX_TEXT];
 	char testsignal_text2[TESTSIGNAL_MAX_TEXT];
@@ -413,7 +413,7 @@ struct vid_t {
 	FILE *raw_bb_file;
 
 	/* Test card */
-	testsignal_t* testsignal_philips;
+	testsignal_t* testsignal;
 	
 	/* Teletext state */
 	tt_t tt;
