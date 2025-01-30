@@ -1,95 +1,47 @@
 
  -[ HackTV - Analogue TV transmitter for the HackRF ]-
 
-https://sanslogic.co.uk/hacktv
+This repository contains a fork of the hacktv project which has been modified to generate Philips test signals.
 
-WHAT'S IT DO
+GETTING IT:
 
-Generates a PAL, NTSC, SECAM, D/D2-MAC video signal from a video file, stream
-or test pattern. Also supports older 819, 405, 240 and 30 line standards, as
-well as the NASA Apollo video standards, both colour and mono.
+To perform the below an environment capable of building the primary 'fsphil' repository is required: https://github.com/fsphil/hacktv
 
-Input is any file type or URL supported by ffmpeg.
+$ git clone https://github.com/inaxeon/hacktv
+$ cd hacktv
+$ git submodule init
+$ git submodule update
+$ cd src
+$ make
+$ cd ..
 
-Output can be to a file, HackRF, fl2k-supported VGA adaptors or any SDR
-supported by SoapySDR.
+RUNNING IT:
 
-It also supports:
+(from the hacktv root dir):
 
-+ Teletext (625-line only)
-+ NICAM stereo audio
-+ Videocrypt I/II/S hardware support
-+ Partial Nagravision Syster hardware support
-+ Analogue Copy Protection system, similar to Macrovision
+$ cd testsignals
 
+For HackDAC owners (baseband output):
+$ ../src/hacktv -m pal --pixelrate 13500000 --samplerate 13500000 --testsignal philips4x3 --text1 "HackTV" --text2 "Test" --clockmode datetime ./test_1khz_5sec.wav
 
-WHAT'S IT NOT DO (yet)
+For RF output (PAL-I UHF Channel 21):
+$ ../src/hacktv -m i --freq 471250000 -g 47 --pixelrate 13500000 --samplerate 13500000 --testsignal philips4x3 --text1 "HackTV" --text2 "Test" --clockmode datetime ./test_1khz_5sec.wav
 
-+ An optional notch filter for the colour subcarrier would be nice
+Test signals available (--testsignal and -m parameter combinations):
 
+philips4x3: pal/ntsc/secam
+philips16x9: pal/ntsc
+fubk4x3: pal
+fubk16x9: pal
+philipsih: pal
+cbar: pal/ntsc
+sinxx: pal
+pulseandbar: pal
 
-WHAT IT WON'T DO
+Clock mode parameters (--clockmode):
+off
+time
+datetime
 
-+ DVB or other pure digital signals
-+ Bring back Firefly :(
-
-
-REQUIREMENTS
-
-Depends on libhackrf and various ffmpeg libraries.
-
-* For Fedora (with rpmfusion)
-yum install hackrf-devel osmo-fl2k-devel SoapySDR-devel ffmpeg-devel
-
-* For Debian and related
-apt-get update
-apt-get install libhackrf-dev libavutil-dev libavdevice-dev libswresample-dev libswscale-dev libavformat-dev libavcodec-dev
-
-* On Debian (sid)
-apt-get install hacktv
-
-
-WARNING
-
-The hackrf is not designed to be connected directly to AV equipment and could
-be damaged by, or cause damage to, your receiver. Please ensure no DC voltages
-or control signals are sent back into the hackrf, and that the RF power levels
-out of the hackrf are not too high for your receiver.
-
-
-INSTALL
-
-cd src
-make
-make install
-
-
-EXAMPLES
-
-# Generate a file containing a PAL baseband signal from a video
-$ hacktv -o baseband.bin -m pal example.mkv
-
-# Transmit a test pattern on UHF channel 31 (PAL System I), 47dB TX gain
-$ hacktv -f 551250000 -m i -g 47 test
-
-# Transmit a test pattern with teletext
-$ hacktv -f 551250000 -m i -g 47 --teletext demo.tti test
-
-# Download and transmit teletext pages from the Teefax service
-$ svn checkout http://teastop.plus.com/svn/teletext/ teefax
-$ hacktv -f 551250000 -m i -g 47 --teletext teefax test
-
-# Transmit two channels simultaneously on UHF channel 68 and 69 (PAL I)
-$ hacktv -s 20000000 --offset -6.75e6 --level 0.5 --filter -o - test | hacktv -s 20000000 -f 854e6 --offset 1.25e6 --level 0.5 --passthru /dev/stdin -g 47 --filter test
-
-# Grab and transmit the local display (X11)
-$ hacktv -f 551.25e6 -m i -g 47 -ffmt x11grab --fopts framerate=25 ffmpeg::0
-
-LINKS
-
-https://github.com/captainjack64/hacktv - Fork of hacktv with support for additional scrambling systems
-https://github.com/steeviebops/jhacktv-gui - A cross platform GUI for hacktv written in Java
-
-
--Philip Heron <phil@sanslogic.co.uk>
-
+TESTING THEM ALL:
+$ ./testsignal_sequence.sh
