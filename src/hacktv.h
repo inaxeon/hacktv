@@ -62,6 +62,7 @@ typedef struct {
 	int vitc;
 	int filter;
 	int nocolour;
+	int s_video;
 	float volume;
 	int noaudio;
 	int nonicam;
@@ -96,7 +97,7 @@ typedef struct {
 	int json;
 	char *ffmt;
 	char *fopts;
-
+	int fl2k_audio;
 	/* Video encoder state */
 	vid_t vid;
 	
