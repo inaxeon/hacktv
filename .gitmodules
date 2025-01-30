@@ -1,0 +1,3 @@
+[submodule "testsignals"]
+	path = testsignals
+	url = https://github.com/inaxeon/hacktv-testsignals

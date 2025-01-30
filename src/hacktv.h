@@ -86,10 +86,10 @@ typedef struct {
 	char *raw_bb_file;
 	int16_t raw_bb_blanking_level;
 	int16_t raw_bb_white_level;
-	testcard_type_t testcard_philips_type;
-	testcard_clock_mode_t testcard_clock_mode;
-	char testcard_text1[TESTCARD_MAX_TEXT];
-	char testcard_text2[TESTCARD_MAX_TEXT];
+	testsignal_type_t testsignal_philips_type;
+	testsignal_clock_mode_t testsignal_clock_mode;
+	char testsignal_text1[TESTSIGNAL_MAX_TEXT];
+	char testsignal_text2[TESTSIGNAL_MAX_TEXT];
 	int secam_field_id;
 	int secam_field_id_lines;
 	int list_modes;

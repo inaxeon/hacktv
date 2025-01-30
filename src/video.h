@@ -39,7 +39,7 @@ typedef struct vid_t vid_t;
 #include "vitc.h"
 #include "vbidata.h"
 #include "sis.h"
-#include "test_philips.h"
+#include "testsignal.h"
 
 /* Return codes */
 #define VID_OK             0
@@ -153,11 +153,11 @@ typedef struct {
 	int16_t raw_bb_blanking_level;
 	int16_t raw_bb_white_level;
 
-	/* Philips testcards */
-	testcard_type_t testcard_philips_type;
-	testcard_clock_mode_t testcard_clock_mode;
-	char testcard_text1[TESTCARD_MAX_TEXT];
-	char testcard_text2[TESTCARD_MAX_TEXT];
+	/* Philips testsignals */
+	testsignal_type_t testsignal_philips_type;
+	testsignal_clock_mode_t testsignal_clock_mode;
+	char testsignal_text1[TESTSIGNAL_MAX_TEXT];
+	char testsignal_text2[TESTSIGNAL_MAX_TEXT];
 	
 	/* Signal offset and passthru */
 	int64_t offset;
@@ -413,7 +413,7 @@ struct vid_t {
 	FILE *raw_bb_file;
 
 	/* Test card */
-	testcard_t* testcard_philips;
+	testsignal_t* testsignal_philips;
 	
 	/* Teletext state */
 	tt_t tt;

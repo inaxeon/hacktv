@@ -23,7 +23,7 @@
 #include "hacktv.h"
 #include "av.h"
 #include "rf.h"
-#include "test_philips.h"
+#include "testsignal.h"
 
 static volatile sig_atomic_t _abort = 0;
 static volatile sig_atomic_t _signal = 0;
@@ -377,7 +377,7 @@ enum {
 	_OPT_PASSTHRU,
 	_OPT_INVERT_VIDEO,
 	_OPT_RAW_BB_FILE,
-	_OPT_TESTCARD,
+	_OPT_TESTSIGNAL,
 	_OPT_CLOCK_MODE,
 	_OPT_TEXT1,
 	_OPT_TEXT2,
@@ -457,7 +457,7 @@ int main(int argc, char *argv[])
 		{ "passthru",       required_argument, 0, _OPT_PASSTHRU },
 		{ "invert-video",   no_argument,       0, _OPT_INVERT_VIDEO },
 		{ "raw-bb-file",    required_argument, 0, _OPT_RAW_BB_FILE },
-		{ "testcard",       required_argument, 0, _OPT_TESTCARD },
+		{ "testsignal",       required_argument, 0, _OPT_TESTSIGNAL },
 		{ "clockmode",      required_argument, 0, _OPT_CLOCK_MODE },
 		{ "text1",          required_argument, 0, _OPT_TEXT1 },
 		{ "text2",          required_argument, 0, _OPT_TEXT2 },
@@ -826,40 +826,40 @@ int main(int argc, char *argv[])
 			s.raw_bb_file = optarg;
 			break;
 
-		case _OPT_TESTCARD: /* --testcard <name> */
+		case _OPT_TESTSIGNAL: /* --testsignal <name> */
 			{
-				testcard_type_t type = testcard_type(optarg);
+				testsignal_type_t type = testsignal_type(optarg);
 				if (type < 0)
 				{
 					fprintf(stderr, "Unknown test card type.\n");
 					return(-1);
 				}
 				
-				s.testcard_philips_type = type;
+				s.testsignal_philips_type = type;
 				break;
 			}
 
 		case _OPT_CLOCK_MODE: /* --clockmode <mode> */
 			{
-				testcard_clock_mode_t mode = testcard_clock_mode(optarg);
+				testsignal_clock_mode_t mode = testsignal_clock_mode(optarg);
 				if (mode < 0)
 				{
 					fprintf(stderr, "Unknown test card clock mode.\n");
 					return(-1);
 				}
 				
-				s.testcard_clock_mode = mode;
+				s.testsignal_clock_mode = mode;
 				break;
 			}
 
 		case _OPT_TEXT1:
-			strncpy(s.testcard_text1, optarg, sizeof(s.testcard_text1) - 1);
-			s.testcard_text1[sizeof(s.testcard_text1) - 1] = 0;
+			strncpy(s.testsignal_text1, optarg, sizeof(s.testsignal_text1) - 1);
+			s.testsignal_text1[sizeof(s.testsignal_text1) - 1] = 0;
 			break;
 
 		case _OPT_TEXT2:
-			strncpy(s.testcard_text2, optarg, sizeof(s.testcard_text2) - 1);
-			s.testcard_text2[sizeof(s.testcard_text2) - 1] = 0;
+			strncpy(s.testsignal_text2, optarg, sizeof(s.testsignal_text2) - 1);
+			s.testsignal_text2[sizeof(s.testsignal_text2) - 1] = 0;
 			break;
 
 		case _OPT_RAW_BB_BLANKING: /* --raw-bb-blanking <value> */
@@ -1239,10 +1239,10 @@ int main(int argc, char *argv[])
 	vid_conf.secam_field_id = s.secam_field_id;
 	vid_conf.secam_field_id_lines = s.secam_field_id_lines;
 
-	vid_conf.testcard_philips_type = s.testcard_philips_type;
-	vid_conf.testcard_clock_mode = s.testcard_clock_mode;
-	strcpy(vid_conf.testcard_text1, s.testcard_text1);
-	strcpy(vid_conf.testcard_text2, s.testcard_text2);
+	vid_conf.testsignal_philips_type = s.testsignal_philips_type;
+	vid_conf.testsignal_clock_mode = s.testsignal_clock_mode;
+	strcpy(vid_conf.testsignal_text1, s.testsignal_text1);
+	strcpy(vid_conf.testsignal_text2, s.testsignal_text2);
 	
 	/* Setup video encoder */
 	r = vid_init(&s.vid, s.samplerate, s.pixelrate, &vid_conf);
