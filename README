@@ -25,7 +25,7 @@ For HackDAC owners (baseband output):
 $ ../src/hacktv -m pal --pixelrate 13500000 --samplerate 13500000 --testsignal philips4x3 --text1 "HackTV" --text2 "Test" --clockmode datetime test
 
 For RF output (PAL-I UHF Channel 21):
-$ ../src/hacktv -m i --freq 471250000 -g 47 --pixelrate 13500000 --samplerate 13500000 --testsignal philips4x3 --text1 "HackTV" --text2 "Test" --clockmode datetime test
+$ ../src/hacktv -m i --freq 471250000 -g 47 --pixelrate 13500000 --testsignal philips4x3 --text1 "HackTV" --text2 "Test" --clockmode datetime test
 
 Test signals available (--testsignal and -m parameter combinations):
 
