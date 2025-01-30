@@ -1325,7 +1325,7 @@ static int _testsignal_load(testsignal_t* tc)
 
 	if (!f)
 	{
-		perror("fopen");
+		fprintf(stderr, "testsignal: Failed to open '%s'. Ensure hacktv-testsignals is in the current directory.\n", tc->params->file_name);
 		return(VID_ERROR);
 	}
 
