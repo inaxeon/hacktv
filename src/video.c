@@ -3979,7 +3979,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		/* Generate the colour subcarrier lookup table */
 		/* This carrier is in phase with the U (B-Y) component */
 		s->colour_lookup_width = a.num;
-		d = 2.0 * M_PI * ((double) s->conf.colour_carrier.num / s->conf.colour_carrier.den) / s->pixel_rate;
+		d = 2.0 * M_PI * ((double) a.den / a.num);
 		
 		/*  To make overflow easier to handle the length of the table is extended by one line */
 		s->colour_lookup = malloc((s->colour_lookup_width + s->width) * sizeof(cint16_t));
@@ -4351,7 +4351,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		/* Enable Zweikanalton / A2 Stereo */
 		s->a2stereo_system_m = s->conf.fm_mono_carrier == 4500000;
 		s->conf.fm_right_level = s->conf.fm_mono_level * 0.446684; /* -7 dB */
-		s->conf.fm_right_carrier = s->conf.fm_mono_carrier + (s->a2stereo_system_m ? 224213 : 242000);
+		s->conf.fm_right_carrier = s->conf.fm_mono_carrier + (s->a2stereo_system_m ? 224213 : 242187.5);
 		s->conf.fm_right_deviation = s->conf.fm_mono_deviation;
 		s->conf.fm_right_preemph = s->conf.fm_mono_preemph;
 		
