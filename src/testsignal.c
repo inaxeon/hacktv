@@ -36,6 +36,8 @@
 #define PM8546_SAMPLE_RATE	  	27000000 /* Not always true, but true for what's been implemented so far */
 #define PM8546_CHAR_INDEX(x)	((x) - 32)
 
+const char pm8546_prom_filename[] = "pm8546g.bin";
+
 #define _USE_FIR_TEXT_SCALING
 
 typedef struct 
@@ -1396,7 +1398,7 @@ static int _testsignal_pm8546_rom_load(testsignal_t* tc, uint8_t** buf)
 	int file_len;
 	char fname[PATH_MAX * 2];
 
-	_testsignal_build_filename(fname, PATH_MAX, tc->conf.testsignals_path, "pm8546g.bin");
+	_testsignal_build_filename(fname, PATH_MAX, tc->conf.testsignals_path, pm8546_prom_filename);
 
 	FILE* f = fopen(fname, "rb");
 
