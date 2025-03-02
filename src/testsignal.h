@@ -67,6 +67,7 @@ typedef struct
 typedef struct {
 	testsignal_type_t type;
 	testsignal_clock_mode_t clock_mode;
+	char testsignals_path[PATH_MAX];
 	char text1[TESTSIGNAL_MAX_TEXT];
 	char text2[TESTSIGNAL_MAX_TEXT];
 } testsignal_conf_t;

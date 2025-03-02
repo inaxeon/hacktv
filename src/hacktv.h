@@ -89,6 +89,7 @@ typedef struct {
 	int16_t raw_bb_white_level;
 	testsignal_type_t testsignal_type;
 	testsignal_clock_mode_t testsignal_clock_mode;
+	char testsignals_path[PATH_MAX];
 	char testsignal_text1[TESTSIGNAL_MAX_TEXT];
 	char testsignal_text2[TESTSIGNAL_MAX_TEXT];
 	int secam_field_id;

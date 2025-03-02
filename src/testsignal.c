@@ -103,17 +103,17 @@ const testsignal_text_boundaries_t philips4x3_ntsc_bottombox = {
 
 const testsignal_text_boundaries_t philips4x3_ntsc_date = {
 	.first_line = 131,
-	.first_sample = 283,
+	.first_sample = 281,
 	.height = 32,
-	.width = 140,
+	.width = 144,
 	.black_level = INHERIT
 };
 
 const testsignal_text_boundaries_t philips4x3_ntsc_time = {
 	.first_line = 131,
-	.first_sample = 545,
+	.first_sample = 543,
 	.height = 32,
-	.width = 140,
+	.width = 144,
 	.black_level = INHERIT
 };
 
@@ -159,9 +159,9 @@ const testsignal_text_boundaries_t philips16x9_ntsc_bottombox = {
 
 const testsignal_text_boundaries_t philips16x9_ntsc_date = {
 	.first_line = 131,
-	.first_sample = 333,
+	.first_sample = 331,
 	.height = 32,
-	.width = 119,
+	.width = 122,
 	.black_level = INHERIT
 };
 
@@ -169,7 +169,7 @@ const testsignal_text_boundaries_t philips16x9_ntsc_time = {
 	.first_line = 131,
 	.first_sample = 514,
 	.height = 32,
-	.width = 119,
+	.width = 122,
 	.black_level = INHERIT
 };
 
@@ -1296,6 +1296,7 @@ static int _testsignal_configure(testsignal_t* tc, vid_t *vid)
 		return(VID_ERROR);
 	}
 
+	strcpy(tc->conf.testsignals_path, vid->conf.testsignals_path);
 	strcpy(tc->conf.text1, vid->conf.testsignal_text1);
 	strcpy(tc->conf.text2, vid->conf.testsignal_text2);
 	tc->conf.clock_mode = vid->conf.testsignal_clock_mode;
@@ -1316,16 +1317,30 @@ static int _testsignal_configure(testsignal_t* tc, vid_t *vid)
 	return (VID_OK);
 }
 
+static void _testsignal_build_filename(char *fname, int sz, const char *dir, const char *file)
+{
+	*fname = 0;
+
+	if (*dir)
+		strncat(fname, dir, sz);
+
+	if (*file)
+		strncat(fname, file, sz);
+}
+
 static int _testsignal_load(testsignal_t* tc)
 {
 	int16_t* buf;
 	int file_len;
+	char fname[PATH_MAX * 2];
 
-	FILE *f = fopen(tc->params->file_name, "rb");
+	_testsignal_build_filename(fname, PATH_MAX, tc->conf.testsignals_path, tc->params->file_name);
+
+	FILE *f = fopen(fname, "rb");
 
 	if (!f)
 	{
-		fprintf(stderr, "testsignal: Failed to open '%s'. Ensure hacktv-testsignals is in the current directory.\n", tc->params->file_name);
+		fprintf(stderr, "testsignal: Failed to open '%s'.\n", fname);
 		return(VID_ERROR);
 	}
 
@@ -1368,12 +1383,15 @@ static int _testsignal_load(testsignal_t* tc)
 static int _testsignal_pm8546_rom_load(testsignal_t* tc, uint8_t** buf)
 {
 	int file_len;
+	char fname[PATH_MAX * 2];
 
-	FILE* f = fopen("pm8546g.bin", "rb");
+	_testsignal_build_filename(fname, PATH_MAX, tc->conf.testsignals_path, "pm8546g.bin");
+
+	FILE* f = fopen(fname, "rb");
 
 	if (!f)
 	{
-		perror("fopen");
+		fprintf(stderr, "testsignal: Failed to open '%s'.\n", fname);
 		return(VID_ERROR);
 	}
 

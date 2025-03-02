@@ -20,6 +20,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <signal.h>
+#include <dirent.h>
 #include "hacktv.h"
 #include "av.h"
 #include "rf.h"
@@ -392,6 +393,7 @@ enum {
 	_OPT_INVERT_VIDEO,
 	_OPT_RAW_BB_FILE,
 	_OPT_TESTSIGNAL,
+	_OPT_TESTSIGNALS_PATH,
 	_OPT_CLOCK_MODE,
 	_OPT_TEXT1,
 	_OPT_TEXT2,
@@ -474,6 +476,7 @@ int main(int argc, char *argv[])
 		{ "invert-video",   no_argument,       0, _OPT_INVERT_VIDEO },
 		{ "raw-bb-file",    required_argument, 0, _OPT_RAW_BB_FILE },
 		{ "testsignal",       required_argument, 0, _OPT_TESTSIGNAL },
+		{ "testsignals-path", required_argument, 0, _OPT_TESTSIGNALS_PATH },
 		{ "clockmode",      required_argument, 0, _OPT_CLOCK_MODE },
 		{ "text1",          required_argument, 0, _OPT_TEXT1 },
 		{ "text2",          required_argument, 0, _OPT_TEXT2 },
@@ -860,6 +863,21 @@ int main(int argc, char *argv[])
 				s.testsignal_type = type;
 				break;
 			}
+
+		case _OPT_TESTSIGNALS_PATH: /* --testsignals-path <dir> */
+		{
+			DIR* dir = opendir(optarg);
+			if (dir) {
+				strncpy(s.testsignals_path, optarg, sizeof(s.testsignals_path) - 1);
+				s.testsignals_path[sizeof(s.testsignals_path) - 1] = 0;
+				closedir(dir);
+			} else {
+				fprintf(stderr, "Specified testsignals path not found.\n");
+				return(-1);
+			}
+			
+			break;
+		}
 
 		case _OPT_CLOCK_MODE: /* --clockmode <mode> */
 			{
@@ -1299,6 +1317,7 @@ int main(int argc, char *argv[])
 
 	vid_conf.testsignal_type = s.testsignal_type;
 	vid_conf.testsignal_clock_mode = s.testsignal_clock_mode;
+	strcpy(vid_conf.testsignals_path, s.testsignals_path);
 	strcpy(vid_conf.testsignal_text1, s.testsignal_text1);
 	strcpy(vid_conf.testsignal_text2, s.testsignal_text2);
 	
