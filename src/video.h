@@ -19,7 +19,9 @@
 #define _VIDEO_H
 
 #include <stdint.h>
+#ifndef WIN32
 #include <linux/limits.h>
+#endif
 #include "av.h"
 #include "nicam728.h"
 #include "dance.h"
