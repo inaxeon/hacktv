@@ -1320,9 +1320,20 @@ static int _testsignal_configure(testsignal_t* tc, vid_t *vid)
 static void _testsignal_build_filename(char *fname, int sz, const char *dir, const char *file)
 {
 	*fname = 0;
+	int l;
 
 	if (*dir)
 		strncat(fname, dir, sz);
+
+	l = strlen(fname);
+
+#ifndef WIN32
+	if (l && fname[l - 1] != '/')
+		strncat(fname, "/", sz);
+#else
+	if (l && fname[l - 1] != '\\')
+		strncat(fname, "\\", sz);
+#endif
 
 	if (*file)
 		strncat(fname, file, sz);
