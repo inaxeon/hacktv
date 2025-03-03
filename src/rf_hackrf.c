@@ -345,9 +345,11 @@ static int _rf_close(void *private)
 	fifo_close(&rf->buffers);
 	if(rf->audio_buffers.count) fifo_close(&rf->audio_buffers);
 	
-	// Temporarily commented out due to crash on Windows
-	// fifo_free(&rf->buffers);
-	// if(rf->audio_buffers.count) fifo_free(&rf->audio_buffers);
+#ifndef WIN32
+	// Temporarily disabled due to crash on Windows
+	fifo_free(&rf->buffers);
+	if(rf->audio_buffers.count) fifo_free(&rf->audio_buffers);
+#endif
 	
 	r = hackrf_stop_tx(rf->d);
 	if(r != HACKRF_SUCCESS)
