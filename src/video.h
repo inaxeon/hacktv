@@ -20,7 +20,7 @@
 
 #include <stdint.h>
 #ifndef WIN32
-#include <linux/limits.h>
+#include <limits.h>
 #endif
 #include "av.h"
 #include "nicam728.h"
